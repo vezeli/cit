@@ -5,17 +5,17 @@ import pandas as pd
 FINANCIAL_YEAR = 2021
 DATA = pd.DataFrame(
     [
-        {"transaction_date": datetime(2020,2,1), "amount": 1, "price": 100},
-        {"transaction_date": datetime(2020,6,1), "amount": 2, "price": 100},
-        {"transaction_date": datetime(2020,8,1), "amount": -1, "price": 800},
-        {"transaction_date": datetime(2021,6,1), "amount": -1, "price": 100},
-        {"transaction_date": datetime(2021,7,1), "amount": -1, "price": 300},
+        {"transaction_date": datetime(2020,2,1), "amount": 1, "price": 1, "fxrate": 100},
+        {"transaction_date": datetime(2020,6,1), "amount": 2, "price": 1, "fxrate": 100},
+        {"transaction_date": datetime(2020,8,1), "amount": -1, "price": 8, "fxrate": 100},
+        {"transaction_date": datetime(2021,6,1), "amount": -1, "price": 1, "fxrate": 100},
+        {"transaction_date": datetime(2021,7,1), "amount": -1, "price": 3, "fxrate": 100},
     ]
 ).set_index("transaction_date")
 
 
 def calculate_cost(df: pd.DataFrame) -> pd.DataFrame:
-    return df.assign(cost=lambda df: -1 * df.amount * df.price)
+    return df.assign(cost=lambda df: -1 * df.amount * df.price * df.fxrate)
 
 
 df = calculate_cost(DATA)
