@@ -14,7 +14,7 @@ def calculate_cost(df: DataFrame, c: Config) -> DataFrame:
 
 
 def format_table(recieved, aquisition_price, profit_and_loss) -> None:
-    out = f"| RECIEVED: {recieved} | AQUISITION PRICE: {aquisition_price} | P&L: {profit_and_loss} |"
+    out = f"| RECIEVED: {recieved:.2f} | AQUISITION PRICE: {aquisition_price:.2f} | P&L: {profit_and_loss:.2f} |"
 
     print(len(out) * "-")
     print(out)
