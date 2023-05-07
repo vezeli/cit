@@ -3,7 +3,7 @@
 	"Currency": "SEK",
 	"Transactions": [
 		{"date": "2020-05-01", "amount":  1.0, "price": 1, "exchange_rate": 1},
-		{"date": "2020-06-01", "amount":  2.0, "price": 1, "exchange_rate": 1},
+		{"date": "2020-06-01", "amount":  2.0, "price": 4, "exchange_rate": 1},
 		{"date": "2020-08-01", "amount": -1.0, "price": 1, "exchange_rate": 1},
 		{"date": "2021-06-01", "amount": -1.0, "price": 2, "exchange_rate": 1},
 		{"date": "2021-07-01", "amount": -1.0, "price": 2, "exchange_rate": 1}
