@@ -9,8 +9,8 @@ config = Config()
 if __name__ == "__main__":
     try:
         financial_year = int(sys.argv[1])
-    except TypeError as e:
-        raise e("Argument `financial_year` must be integer.")
+    except ValueError as err:
+        raise err("Argument `financial_year` must be of integer type.")
 
     format_table(
         *calculate_statistics(
