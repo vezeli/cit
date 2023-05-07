@@ -2,7 +2,10 @@ from datetime import datetime
 import json
 
 from pandas import DataFrame
+from pandas.errors import ParserError
 import yfinance as yf
+
+from _config import Config
 
 
 def read_json(filename: str) -> dict:
@@ -11,86 +14,87 @@ def read_json(filename: str) -> dict:
     return d
 
 
-# data_types
-_BASIC = "basic"
-_COMPLETE = "complete"
-# root keys
-_ASSET = "asset"
-_CURRENCY = "currency"
-_TRANSACTIONS = "transactions"
-# columns in _TRANSACTION values
-_DATE = "date"
-_AMOUNT = "amount"
-_PRICE = "price"
-_FX_RATE = "fxrate"
-
-
-# TODO: add `config` object as input
-# TODO: `check_transaction_data_type` should be a object that returns either `_BASIC` or _COMPELTE`
-def check_transaction_data_type(transactions: list[dict]) -> str:
+def check_transaction_data_type(transactions: list[dict], c: Config) -> str:
     df = DataFrame(transactions)
 
-    if {_DATE, _AMOUNT}.issuperset(df):
-        rv = _BASIC
-    elif {_DATE, _AMOUNT, _PRICE, _FX_RATE}.issuperset(df):
-        rv = _COMPLETE
+    if {c._DATE, c._AMOUNT}.issuperset(df):
+        rv = c._BASIC
+    elif {c._DATE, c._AMOUNT, c._PRICE, c._FX_RATE}.issuperset(df):
+        rv = c._COMPLETE
     else:
-        raise ValueError
+        raise ValueError("Unable to import transaction data.")
 
     return rv
 
 
-# TODO: add a try/except when reading in the data
-# TODO: add a try/except when constructing a DataFrame
-def read_in_transactions(filename: str) -> DataFrame:
+def read_in_transactions(filename: str, c: Config) -> DataFrame:
     d = read_json(filename)
 
-    asset, currency, transactions = d[_ASSET], d[_CURRENCY], d[_TRANSACTIONS]
+    asset = d[c._ASSET]
+    currency = d[c._CURRENCY]
+    transactions = d[c._TRANSACTIONS]
 
-    transaction_data_type = check_transaction_data_type(transactions)
+    transaction_data_type = check_transaction_data_type(transactions, c)
 
-    df = (
-        DataFrame(data=transactions)
-        .astype({_DATE: "datetime64[D]"})
-        .set_index(_DATE)
-        .sort_index()
-    )
+    try:
+        df = (
+            DataFrame(data=transactions)
+            .astype({c._DATE: "datetime64[D]"})
+            .set_index(c._DATE)
+            .sort_index()
+        )
+    except Exception:
+        raise TypeError(
+            f"Expect datetime64[D] type in transaction `{c._DATE}`"
+        )
 
-    if transaction_data_type == _BASIC:
-        df = complement_basic_data(d[_ASSET], d[_CURRENCY], df)
-    elif transaction_data_type == _COMPLETE:
+    if transaction_data_type == c._BASIC:
+        df = complement_basic_data(d[c._ASSET], d[c._CURRENCY], df)
+    elif transaction_data_type == c._COMPLETE:
         df = df
     else:
         raise ValueError
 
-    return df.apply(lambda x: x.round(2) if x.name in [_PRICE, _FX_RATE] else x)
+    return df.apply(
+        lambda x: x.round(2) if x.name in [c._PRICE, c._FX_RATE] else x
+    )
 
 
-def download(ticker: str, start_date: datetime, end_date: datetime) -> DataFrame:
+def download(
+    ticker: str,
+    start_date: datetime,
+    end_date: datetime) -> DataFrame:
     df = yf.download(ticker, start=start_date, end=end_date)
-    return (
+
+    df =  (
         df
         .asfreq("D", method="ffill")
-        .assign(Mid=lambda x: (x.Open+x.Close)/2)
+        .assign(Mid=lambda df: (df.Open+df.Close)/2)
         .Mid
         .to_frame()
     )
 
+    return df
 
-def complement_basic_data(asset: str, currency: str, df_a: DataFrame) -> DataFrame:
+
+def complement_basic_data(
+    asset: str,
+    currency: str,
+    df_a: DataFrame,
+    c: Config) -> DataFrame:
     start, end = df_a.index.year.min(), df_a.index.year.max()
 
     df_b = download(
         ticker=asset,
         start_date=datetime(year=start, month=1, day=1),
         end_date = datetime(year=end, month=12, day=31)
-    ).rename(columns={"Mid": _PRICE})
+    ).rename(columns={"Mid": c._PRICE})
 
     df_c = download(
         ticker=f"{currency}=X", # NOTE: Yahoo Finance FX tickers are SEK=X -> USD/SEK
         start_date=datetime(year=start, month=1, day=1),
         end_date = datetime(year=end, month=12, day=31)
-    ).rename(columns={"Mid": _FX_RATE})
+    ).rename(columns={"Mid": c._FX_RATE})
 
     df_r = (
         df_a.merge(
