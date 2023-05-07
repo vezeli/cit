@@ -27,8 +27,8 @@ def check_transaction_data_type(transactions: list[dict], c: Config) -> str:
     return rv
 
 
-def read_in_transactions(filename: str, c: Config) -> DataFrame:
-    d = read_json(filename)
+def read_in_transactions(c: Config) -> DataFrame:
+    d = read_json(c._DATA_PATH)
 
     asset = d[c._ASSET]
     currency = d[c._CURRENCY]
