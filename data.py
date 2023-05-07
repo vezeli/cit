@@ -11,53 +11,70 @@ def read_json(filename: str) -> dict:
     return d
 
 
+# data_types
+_BASIC = "basic"
+_COMPLETE = "complete"
 # root keys
-_SYMBOL = "symbol"
-_PRICE_CURRENCY = "price_currency"
+_ASSET = "asset"
+_CURRENCY = "currency"
 _TRANSACTIONS = "transactions"
-_TRANSACTIONS_DATA_TYPE = "data_type"
-_TRANSACTIONS_DATA = "data"
 # columns in _TRANSACTION values
 _DATE = "date"
 _AMOUNT = "amount"
 _PRICE = "price"
-_FX_RATE = "FXrate"
+_FX_RATE = "fxrate"
 
 
+# TODO: add `config` object as input
+# TODO: `check_transaction_data_type` should be a object that returns either `_BASIC` or _COMPELTE`
+def check_transaction_data_type(transactions: list[dict]) -> str:
+    df = DataFrame(transactions)
+
+    if {_DATE, _AMOUNT}.issuperset(df):
+        rv = _BASIC
+    elif {_DATE, _AMOUNT, _PRICE, _FX_RATE}.issuperset(df):
+        rv = _COMPLETE
+    else:
+        raise ValueError
+
+    return rv
+
+
+# TODO: add a try/except when reading in the data
+# TODO: add a try/except when constructing a DataFrame
 def read_in_transactions(filename: str) -> DataFrame:
     d = read_json(filename)
 
-    symbol, price_currency, transactions = d[_SYMBOL], d[_PRICE_CURRENCY], d[_TRANSACTIONS]
-    data_type = transactions[_TRANSACTIONS_DATA_TYPE]
+    asset, currency, transactions = d[_ASSET], d[_CURRENCY], d[_TRANSACTIONS]
 
-    # TODO: add a function that takes a config object
-    # TODO: add try/except
+    transaction_data_type = check_transaction_data_type(transactions)
+
     df = (
-        DataFrame(data=transactions[_TRANSACTIONS_DATA])
-        .astype({_DATE: "datetime64[ns]"})
+        DataFrame(data=transactions)
+        .astype({_DATE: "datetime64[D]"})
         .set_index(_DATE)
         .sort_index()
     )
 
-    match data_type:
-        case "basic":
-            df = complement_basic_data(symbol, price_currency, df)
-        case "complete":
-            df = df
+    if transaction_data_type == _BASIC:
+        df = complement_basic_data(d[_ASSET], d[_CURRENCY], df)
+    elif transaction_data_type == _COMPLETE:
+        df = df
+    else:
+        raise ValueError
 
-    return df
+    return df.apply(lambda x: x.round(2) if x.name in [_PRICE, _FX_RATE] else x)
 
 
 def download(ticker: str, start_date: datetime, end_date: datetime) -> DataFrame:
     df = yf.download(ticker, start=start_date, end=end_date)
-    df = (
+    return (
         df
         .asfreq("D", method="ffill")
         .assign(Mid=lambda x: (x.Open+x.Close)/2)
         .Mid
         .to_frame()
     )
-    return df
 
 
 def complement_basic_data(asset: str, currency: str, df_a: DataFrame) -> DataFrame:
