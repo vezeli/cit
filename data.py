@@ -36,17 +36,12 @@ def read_in_transactions(c: Config) -> DataFrame:
 
     transaction_data_type = check_transaction_data_type(transactions, c)
 
-    try:
-        df = (
-            DataFrame(data=transactions)
-            .astype({c._DATE: "datetime64[D]"})
-            .set_index(c._DATE)
-            .sort_index()
-        )
-    except Exception:
-        raise TypeError(
-            f"Expect datetime64[D] type in transaction `{c._DATE}`"
-        )
+    df = (
+        DataFrame(data=transactions)
+        .astype({c._DATE: "datetime64[ns]"})
+        .set_index(c._DATE)
+        .sort_index()
+    )
 
     if transaction_data_type == c._BASIC:
         df = complement_basic_data(d[c._ASSET], d[c._CURRENCY], df, c)
