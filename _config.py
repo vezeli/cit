@@ -13,4 +13,4 @@ class Config:
     _AMOUNT: str = "amount"
     _PRICE: str = "price"
     _FX_RATE: str = "exchange_rate"
-    _AQUISITION_COST: str = "acquisition_cost"
+    _ACQUISITION_COST: str = "acquisition_cost"

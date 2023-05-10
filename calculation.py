@@ -8,7 +8,7 @@ from _config import Config
 
 
 def format_table(recieved, acquisition_price, profit_and_loss) -> None:
-    out = f"| RECIEVED: {recieved:.2f} | AQUISITION PRICE: {acquisition_price:.2f} | P&L: {profit_and_loss:.2f} |"
+    out = f"| RECIEVED: {recieved:.2f} | ACQUISITION PRICE: {acquisition_price:.2f} | P&L: {profit_and_loss:.2f} |"
 
     print(len(out) * "-")
     print(out)
@@ -17,54 +17,62 @@ def format_table(recieved, acquisition_price, profit_and_loss) -> None:
     return None
 
 
-def calculate_acquisition_cost(df_: DataFrame, c: Config) -> DataFrame:
+def calculate_acquisition_costs(df_: DataFrame, c: Config) -> DataFrame:
     _COST = "_cost"
 
 
-    def calculate_cost(df_: DataFrame, c: Config) -> DataFrame:
+    def _calculate_cost(df_: DataFrame, c: Config) -> DataFrame:
         nonlocal _COST
         df = (
             df_
             .copy()
-            .assign(Cost = lambda x: -1*np.sign(x[c._AMOUNT])*x[c._PRICE])
+            .assign(Cost = lambda x: (-1 * np.sign(x[c._AMOUNT])) * x[c._PRICE])
             .rename(columns={"Cost": _COST})
         )
         return df
 
 
-    def _calculate_acquisition_cost(df_: DataFrame, c: Config) -> DataFrame:
+    def _calculate_acquisition_costs(df_: DataFrame, c: Config) -> list[R]:
         nonlocal _COST
 
-        def sell(transaction_cost: R) -> bool:
-            return True if transaction_cost > 0 else False
+        def _is_sell(cost: R) -> bool:
+            return True if cost > 0 else False
 
-        acquisition_costs = []
-        for _, s in (df := df_.pipe(calculate_cost, c=c)).iterrows():
-            transaction_cost, transaction_amount = s[_COST], s[c._AMOUNT]
+        def _is_first_transaction(row: Series, df: DataFrame) -> bool:
+            first_row = 0
+            return row.equals(df.iloc[first_row, :])
 
-            if s.equals(df.iloc[0, :]):
-                acquisition_cost = transaction_cost
-                storage = 0 + transaction_amount
+        df_transactions = df_.pipe(_calculate_cost, c=c)
+
+        acquisition_costs: list[R] = []
+        for _, transaction in df_transactions.iterrows():
+            cost, amount = transaction[_COST], transaction[c._AMOUNT]
+
+            if _is_first_transaction(transaction, df_transactions):
+                acquisition_cost = cost
+                acquisition_amount = 0 + amount
             else:
-                storage = (previous_storage := storage) + transaction_amount
+                acquisition_amount = (previous_acquisition_amount := acquisition_amount) + amount
                 # When selling `acquisition_cost` doesn't change but the amount
-                # held (i.e., `storage) changes:
-                if sell(transaction_cost):
-                    acquisition_cost = acquisition_cost
-                # When buying both `acquisition_cost` and `storage` are affected:
-                else: # when buying
-                    acquisition_cost = np.average(
-                        [acquisition_cost, transaction_cost],
-                        weights=[previous_storage, transaction_amount]
+                # held (i.e., `acquisition_amount`) changes:
+                if _is_sell(cost):
+                    acquisition_cost: R = acquisition_cost
+                # When buying both `acquisition_cost` and `acquisition_amount` are affected:
+                else: 
+                    acquisition_cost: R = np.average(
+                        [acquisition_cost, cost],
+                        weights=[previous_acquisition_amount, amount]
                     )
 
             acquisition_costs.append(acquisition_cost)
 
-        return -1*Series(acquisition_costs, index=df.index, name=c._AQUISITION_COST)
+        return acquisition_costs
 
-    acquisition_series = _calculate_acquisition_cost(df_, c)
-
-    return concat([df_, acquisition_series], axis=1)
+    acquisition_costs: list[R] = _calculate_acquisition_costs(df_, c)
+    return concat(
+        [df_, Series(acquisition_costs, index=df_.index, name=c._ACQUISITION_COST)]
+        , axis=1
+    )
 
 
 def calculate_statistics(df: DataFrame, financial_year: int, c: Config) -> DataFrame:
