@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
-    _DATA_PATH: str = "./transactions.json"
+    _DATA_PATH: str = "./transactions-example1.json"
     _BASIC: str = "BACIS"
     _COMPLETE: str = "COMPLETE"
     _ASSET: str  = "Asset"
