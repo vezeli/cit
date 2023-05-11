@@ -14,4 +14,5 @@ class Config:
     _PRICE: str = "price"
     _FX_RATE: str = "exchange_rate"
     _ACQUISITION_PRICE: str = "acquisition_price"
-    _PNL: str = "PNL"
+    _PNL: str = "P&L"
+    _TAXABLE: str = "taxable"

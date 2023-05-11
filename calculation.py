@@ -1,19 +1,10 @@
+from numbers import Integral as N
 from numbers import Real as R
 
 import numpy as np
 from pandas import concat, DataFrame, Series
 
 from _config import Config
-
-
-def format_table(recieved, acquisition_price, profit_and_loss) -> None:
-    out = f"| RECIEVED: {recieved:.2f} | ACQUISITION PRICE: {acquisition_price:.2f} | P&L: {profit_and_loss:.2f} |"
-
-    print(len(out) * "-")
-    print(out)
-    print(len(out) * "-")
-
-    return None
 
 
 def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:
@@ -24,8 +15,8 @@ def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:
         df = (
             df
             .copy()
-            .assign(Cost = lambda x: (-1 * np.sign(x[c._AMOUNT])) * x[c._PRICE])
-            .rename(columns={"Cost": _COST})
+            .assign(Cost_per_unit = lambda x: (-1 * np.sign(x[c._AMOUNT])) * x[c._PRICE])
+            .rename(columns={"Cost_per_unit": _COST})
         )
         return df
 
@@ -67,27 +58,84 @@ def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:
 
     acquisition_prices: list[R] = df.pipe(_calculate_acquisition_prices, c=c)
     return concat(
-        [df, Series(acquisition_prices, index=df.index, name=c._ACQUISITION_PRICE)]
-        , axis=1
+        [
+            df,
+            Series(acquisition_prices, index=df.index, name=c._ACQUISITION_PRICE)
+        ],
+        axis=1
     )
+
+
+def _calculate_PNL(df: DataFrame, c: Config) -> DataFrame:
+    # PNL can be calculated only for sell transactions (i.e., when `amount` is
+    # negative), because buy transactions do not have any profit and loss.
+    df = (
+        df
+        .copy()
+        .query(f"{c._AMOUNT} < 0")
+        .assign(
+            PNL = lambda x:
+                (-1 * x[c._AMOUNT]) * x[c._FX_RATE] * (x[c._PRICE] - x[c._ACQUISITION_PRICE])
+        )
+        .rename(columns={"PNL": c._PNL})
+    )
+    return df
 
 
 def calculate_PNL(df: DataFrame, c: Config) -> DataFrame:
     df = (
         df
         .copy()
-        .assign(PNL = lambda x:
-            np.minimum(x[c._AMOUNT], 0) * x[c._FX_RATE] * (x[c._ACQUISITION_PRICE] - x[c._PRICE])
-        ).rename(columns={"PNL": c._PNL})
+        .pipe(calculate_acquisition_prices, c=c)
+        .pipe(_calculate_PNL, c=c)
     )
     return df
 
 
-def process_transactions(df: DataFrame, c: Config) -> DataFrame:
-    df = (
-        df
-        .copy()
-        .pipe(calculate_acquisition_prices, c=c)
-        .pipe(calculate_PNL, c=c)
+def calculate_skatteverket(financial_year: N, df: DataFrame, c: Config) -> DataFrame:
+    df = df.loc[df.index.year == financial_year]
+
+    bought = df.loc[df[c._AMOUNT] > 0, c._AMOUNT].sum()
+    sold = df.loc[df[c._AMOUNT] < 0, c._AMOUNT].sum()
+
+    df_ = df.pipe(calculate_PNL, c)
+
+    recieved = (
+        df_
+        .assign(Recieved = lambda x:
+            (-1 * x[c._AMOUNT]) * x[c._FX_RATE] * x[c._PRICE]
+        )
+        .Recieved
+        .sum()
+    )
+
+    payed = (
+        df_
+        .assign(Payed = lambda x:
+            (-1 * x[c._AMOUNT]) * x[c._FX_RATE] * x[c._ACQUISITION_PRICE]
+        )
+        .Payed
+        .sum()
+    )
+
+    df_[c._TAXABLE] = df_[c._PNL].apply(lambda pnl: pnl if pnl > 0 else 0.7*pnl)
+    taxable = df_[c._TAXABLE].sum()
+
+    df = DataFrame(
+        {
+            "Amount bought": [bought],
+            "Amount sold": [sold],
+            "Recieved": [recieved],
+            "Payed": [payed],
+            "Taxable": [taxable],
+        }
+    ).round(
+        {
+            "Amount bought": 5,
+            "Amount sold": 5,
+            "Recieved": 2,
+            "Payed": 2,
+            "Taxable": 2,
+        }
     )
     return df
