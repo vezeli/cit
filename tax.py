@@ -8,8 +8,8 @@ from calculation import (
     calculate_PNL_per_year,
     calculate_skatteverket,
     calculate_statistics,
-    format_DF,
 )
+from formatting import format_DF
 from data import read_in_transactions
 
 DISCLAIMER = (
@@ -49,7 +49,8 @@ if __name__ == "__main__":
                     financial_year=args.year,
                     df=df,
                     c=config,
-                )
+                ),
+                title="TAXATION"
             )
         )
     else:
@@ -59,20 +60,21 @@ if __name__ == "__main__":
                     financial_year=args.year,
                     df=df,
                     c=config,
-                )
+                ),
+                title="PROFIT AND LOSS"
             )
         )
     
     if args.remaining:
         print()
-
         print(
             format_DF(
                 calculate_statistics(
                     financial_year=args.year,
                     df=df,
                     c=config,
-                )
+                ),
+                title="STATISTICS"
             )
         )
     else:

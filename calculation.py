@@ -180,8 +180,3 @@ def calculate_skatteverket(financial_year: N, df: DataFrame, c: Config) -> DataF
         }
     )
     return df
-
-
-def format_DF(df: DataFrame) -> None:
-    df.columns = df.columns.str.capitalize()
-    return df.round(5).to_markdown(index=False, tablefmt="grid")
