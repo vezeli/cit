@@ -92,6 +92,47 @@ def calculate_PNL(df: DataFrame, c: Config) -> DataFrame:
     return df
 
 
+def calculate_PNL_per_year(financial_year: N, df: DataFrame, c: Config) -> DataFrame:
+    df =  df.pipe(calculate_PNL, c=c)
+    return df.loc[df.index.year == financial_year]
+
+
+def calculate_statistics(financial_year: N, df: DataFrame, c: Config) -> DataFrame:
+    df = (
+        df
+        .pipe(calculate_acquisition_prices, c=c)
+        .loc[df.index.year == financial_year]
+    )
+
+    bought: R = df.loc[df[c._AMOUNT] > 0, c._AMOUNT].sum()
+    sold: R = df.loc[df[c._AMOUNT] < 0, c._AMOUNT].sum()
+    remaining: R = bought + sold
+    average_buying_price: R = (
+            df
+            .loc[:, c._ACQUISITION_PRICE]
+            .tail(1)
+            .squeeze()
+    )
+
+    df = DataFrame(
+        {
+            "Amount bought": [bought],
+            "Amount sold": [sold],
+            "Remaining": [remaining],
+            "Average buying price": [average_buying_price],
+        }
+    ).round(
+        {
+            "Amount bought": 5,
+            "Amount sold": 5,
+            "Remaining": 5,
+            "Average buying price": 2,
+        }
+    )
+    return df
+
+
+
 def calculate_skatteverket(financial_year: N, df: DataFrame, c: Config) -> DataFrame:
     df = df.loc[df.index.year == financial_year]
 
@@ -141,6 +182,6 @@ def calculate_skatteverket(financial_year: N, df: DataFrame, c: Config) -> DataF
     return df
 
 
-def formatting(df: DataFrame) -> None:
+def format_DF(df: DataFrame) -> None:
     df.columns = df.columns.str.capitalize()
-    print(df.to_markdown(index=False))
+    return df.round(5).to_markdown(index=False, tablefmt="grid")

@@ -50,9 +50,7 @@ def read_in_transactions(c: Config) -> DataFrame:
     else:
         raise ValueError
 
-    return df.apply(
-        lambda x: x.round(2) if x.name in [c._PRICE, c._FX_RATE] else x
-    )
+    return df
 
 
 def download(
