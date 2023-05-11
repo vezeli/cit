@@ -28,11 +28,11 @@ if __name__ == "__main__":
 
     config = Config()
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("year", type=int, default=datetime.now().year, help="financial year for calculation")
-    parser.add_argument("-i", "--file", type=str, dest="file", default=config._DATA_PATH, help="path to input file")
-    parser.add_argument("-p", "--pnl", action="store_true", help="show P&L instead of tax liability")
-    parser.add_argument("-r", "--remaining", action="store_true", help="show remaining position")
+    parser = argparse.ArgumentParser(epilog=DISCLAIMER, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("year", type=int, default=datetime.now().year, help="select a financial year")
+    parser.add_argument("-i", "--file", type=str, dest="file", default=config._DATA_PATH, help="select an input file")
+    parser.add_argument("-s", "--statistics", action="store_true", help="show basic statistics")
+    parser.add_argument("-d", "--details", action="store_true", help="show P&L of transactions instead of tax liability")
     parser.add_argument("-m", "--mute", action="store_false", help="suppress showing the disclaimer")
     args = parser.parse_args()
 
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     print()
     
-    if not args.pnl:
+    if not args.details:
         print(
             format_DF(
                 calculate_skatteverket(
@@ -50,7 +50,7 @@ if __name__ == "__main__":
                     df=df,
                     c=config,
                 ),
-                title="TAXATION"
+                title="TAXATION:"
             )
         )
     else:
@@ -61,11 +61,11 @@ if __name__ == "__main__":
                     df=df,
                     c=config,
                 ),
-                title="PROFIT AND LOSS"
+                title="DETAILED SALES:"
             )
         )
     
-    if args.remaining:
+    if args.statistics:
         print()
         print(
             format_DF(
@@ -74,7 +74,7 @@ if __name__ == "__main__":
                     df=df,
                     c=config,
                 ),
-                title="STATISTICS"
+                title="STATISTICS:"
             )
         )
     else:
