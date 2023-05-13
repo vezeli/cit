@@ -83,11 +83,16 @@ def complement_basic_data(
         end_date = datetime(year=end, month=12, day=31)
     ).rename(columns={"Mid": c._PRICE})
 
-    df_c = download(
-        ticker=f"{currency}=X", # NOTE: Yahoo Finance FX tickers are SEK=X -> USD/SEK
-        start_date=datetime(year=start, month=1, day=1),
-        end_date = datetime(year=end, month=12, day=31)
-    ).rename(columns={"Mid": c._FX_RATE})
+    # NOTE: FX tickers in Yahoo Finance (i.e., SEKUSD=X is SEK/USD)
+    df_c = (
+        download(
+            ticker=f"{currency}USD=X",
+            start_date=datetime(year=start, month=1, day=1),
+            end_date = datetime(year=end, month=12, day=31)
+        )
+        .apply(lambda x: 1/x if x.name == "Mid" else x) # i.e., SEK/USD -> USD/SEK
+        .rename(columns={"Mid": c._FX_RATE})
+    )
 
     df_r = (
         df_a.merge(
