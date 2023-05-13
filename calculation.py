@@ -6,6 +6,8 @@ from pandas import concat, DataFrame, Series
 
 from _config import Config
 
+_deductible = 0.7
+
 
 def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:
     _COST = "_cost_per_unit"
@@ -75,7 +77,7 @@ def _calculate_PNL(df: DataFrame, c: Config) -> DataFrame:
         .query(f"{c._AMOUNT} < 0")
         .assign(
             PNL = lambda x:
-                (-1 * x[c._AMOUNT]) * x[c._FX_RATE] * (x[c._PRICE] - x[c._ACQUISITION_PRICE])
+                (-1 * x[c._AMOUNT]) * (x[c._PRICE] - x[c._ACQUISITION_PRICE])
         )
         .rename(columns={"PNL": c._PNL})
     )
@@ -144,7 +146,7 @@ def calculate_skatteverket(financial_year: N, df: DataFrame, c: Config) -> DataF
     recieved = (
         df_
         .assign(Recieved = lambda x:
-            (-1 * x[c._AMOUNT]) * x[c._FX_RATE] * x[c._PRICE]
+            (-1 * x[c._AMOUNT]) * x[c._PRICE]
         )
         .Recieved
         .sum()
@@ -153,13 +155,13 @@ def calculate_skatteverket(financial_year: N, df: DataFrame, c: Config) -> DataF
     payed = (
         df_
         .assign(Payed = lambda x:
-            (-1 * x[c._AMOUNT]) * x[c._FX_RATE] * x[c._ACQUISITION_PRICE]
+            (-1 * x[c._AMOUNT]) * x[c._ACQUISITION_PRICE]
         )
         .Payed
         .sum()
     )
 
-    df_[c._TAXABLE] = df_[c._PNL].apply(lambda pnl: pnl if pnl > 0 else 0.7*pnl)
+    df_[c._TAXABLE] = df_[c._PNL].apply(lambda pnl: pnl if pnl > 0 else _deductible * pnl)
     taxable = df_[c._TAXABLE].sum()
 
     df = DataFrame(
