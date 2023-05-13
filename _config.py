@@ -1,3 +1,4 @@
+from numbers import Real as R
 from dataclasses import dataclass
 
 
@@ -16,3 +17,4 @@ class Config:
     _ACQUISITION_PRICE: str = "acquisition_price"
     _PNL: str = "P&L"
     _TAXABLE: str = "taxable"
+    _DEDUCTIBLE: R = 0.7

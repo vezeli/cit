@@ -6,8 +6,6 @@ from pandas import concat, DataFrame, Series
 
 from _config import Config
 
-_deductible = 0.7
-
 
 def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:
     _COST = "_cost_per_unit"
@@ -161,7 +159,9 @@ def calculate_skatteverket(financial_year: N, df: DataFrame, c: Config) -> DataF
         .sum()
     )
 
-    df_[c._TAXABLE] = df_[c._PNL].apply(lambda pnl: pnl if pnl > 0 else _deductible * pnl)
+    df_[c._TAXABLE] = df_[c._PNL].apply(
+            lambda pnl: pnl if pnl > 0 else c._DEDUCTIBLE * pnl
+    )
     taxable = df_[c._TAXABLE].sum()
 
     df = DataFrame(

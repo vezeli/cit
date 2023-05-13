@@ -57,7 +57,7 @@ def download(
     ticker: str,
     start_date: datetime,
     end_date: datetime) -> DataFrame:
-    df = yf.download(ticker, start=start_date, end=end_date)
+    df = yf.download(ticker, start=start_date, end=end_date, progress=False)
 
     df =  (
         df
