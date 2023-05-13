@@ -50,7 +50,7 @@ if __name__ == "__main__":
                     df=df,
                     c=config,
                 ),
-                title="TAXATION:"
+                title="TAXATION:",
             )
         )
     else:
@@ -61,7 +61,8 @@ if __name__ == "__main__":
                     df=df,
                     c=config,
                 ),
-                title="DETAILED SALES:"
+                title="DETAILED TRANSACTIONS:",
+                index=True,
             )
         )
     
@@ -74,7 +75,7 @@ if __name__ == "__main__":
                     df=df,
                     c=config,
                 ),
-                title="STATISTICS:"
+                title="STATISTICS:",
             )
         )
     else:
