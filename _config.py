@@ -4,7 +4,8 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
-    _DATA_PATH: str = "./transactions-example1.json"
+    _DATA_PATH: str = "./data"
+    _INPUT_FILE: str = "transactions-example1.json"
     _BASIC: str = "BACIS"
     _COMPLETE: str = "COMPLETE"
     _ASSET: str  = "Asset"

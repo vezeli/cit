@@ -30,13 +30,13 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(epilog=DISCLAIMER, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("year", type=int, default=datetime.now().year, help="select a financial year")
-    parser.add_argument("-i", "--file", type=str, dest="file", default=config._DATA_PATH, help="select an input file")
+    parser.add_argument("-i", "--file", type=str, dest="file", default=config._INPUT_FILE, help="select an input file")
     parser.add_argument("-s", "--statistics", action="store_true", help="show basic statistics")
     parser.add_argument("-d", "--details", action="store_true", help="show P&L of transactions instead of tax liability")
     parser.add_argument("-m", "--mute", action="store_false", help="suppress showing the disclaimer")
     args = parser.parse_args()
 
-    config._DATA_PATH = args.file
+    config._INPUT_FILE = args.file
 
     df = read_in_transactions(config)
 

@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+from pathlib import Path
 
 from pandas import DataFrame
 from pandas.errors import ParserError
@@ -28,7 +29,8 @@ def check_transaction_data_type(transactions: list[dict], c: Config) -> str:
 
 
 def read_in_transactions(c: Config) -> DataFrame:
-    d = read_json(c._DATA_PATH)
+    dir_path, input_file = Path(c._DATA_PATH), c._INPUT_FILE
+    d = read_json(dir_path / input_file)
 
     asset = d[c._ASSET]
     currency = d[c._CURRENCY]
