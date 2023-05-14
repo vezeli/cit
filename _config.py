@@ -13,9 +13,9 @@ class Config:
     _TRANSACTIONS: str = "Transactions"
     _DATE: str = "date"
     _AMOUNT: str = "amount"
-    _PRICE: str = "price"
-    _FX_RATE: str = "exchange_rate"
-    _ACQUISITION_PRICE: str = "acquisition_price"
+    _PRICE: str = "market price"
+    _FX_RATE: str = "exchange rate"
+    _ACQUISITION_PRICE: str = "acquisition price"
     _PNL: str = "P&L"
     _TAXABLE: str = "taxable"
     _DEDUCTIBLE: R = 0.7

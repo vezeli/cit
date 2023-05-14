@@ -1,3 +1,4 @@
+from numbers import Integral as N
 from pandas import DataFrame
 
 
@@ -13,3 +14,7 @@ def format_DF(df: DataFrame, title: str, index=False) -> str:
     markdown_table = df.round(5).to_markdown(index=index, tablefmt="grid")
     titled_markedown_table = _format_DF(markdown_table, title)
     return titled_markedown_table
+
+
+def df_select_year(df: DataFrame, financial_year: N):
+    return df.loc[df.index.year == financial_year]

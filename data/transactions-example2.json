@@ -2,8 +2,8 @@
 	"Asset": "BTC-USD",
 	"Currency": "SEK",
 	"Transactions": [
-		{"date": "2022-05-01", "amount":   0.500, "price": 40000.0000, "exchange_rate": 1},
-		{"date": "2022-06-01", "amount":   0.200, "price": 50000.0000, "exchange_rate": 1},
-		{"date": "2022-07-01", "amount":  -0.400, "price": 100000.0000, "exchange_rate": 1}
+		{"date": "2022-05-01", "amount":   0.500, "market price": 40000.0000, "exchange rate": 1},
+		{"date": "2022-06-01", "amount":   0.200, "market price": 50000.0000, "exchange rate": 1},
+		{"date": "2022-07-01", "amount":  -0.400, "market price": 100000.0000, "exchange rate": 1}
 	]
 }
