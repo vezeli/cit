@@ -1,9 +1,9 @@
 from datetime import datetime
 import json
 from pathlib import Path
+import textwrap
 
 from pandas import DataFrame
-from pandas.errors import ParserError
 import yfinance as yf
 
 from _config import Config
@@ -23,7 +23,20 @@ def check_transaction_data_type(transactions: list[dict], c: Config) -> str:
     elif {c._DATE, c._AMOUNT, c._PRICE, c._FX_RATE}.issuperset(df):
         rv = c._COMPLETE
     else:
-        raise ValueError("Unable to import transaction data.")
+        raise ValueError(textwrap.dedent("""
+            Unable to import transaction data.
+
+            Make sure that the column names in _config.py:
+
+            - `Config._DATE`
+            - `Config._AMOUNT`
+            - `Config._PRICE`
+            - `Config._FX_RATE`
+
+            are the same as the field names in the input file.
+            """
+            )
+        )
 
     return rv
 

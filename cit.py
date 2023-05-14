@@ -3,7 +3,6 @@ from datetime import datetime
 from numbers import Real as R
 
 from pandas import DataFrame
-from yfinance import download
 
 from _config import Config
 from calculation import (
@@ -12,7 +11,7 @@ from calculation import (
     calculate_skatteverket,
     calculate_statistics,
 )
-from data import download, read_json_with_config, read_in_transactions
+from data import read_json_with_config, read_in_transactions
 from formatting import df_select_year, format_DF
 
 _PROGRAM_NAME = "cit"
