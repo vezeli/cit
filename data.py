@@ -62,7 +62,8 @@ def read_in_transactions(c: Config) -> DataFrame:
 def download(
     ticker: str,
     start_date: datetime,
-    end_date: datetime) -> DataFrame:
+    end_date: datetime
+    ) -> DataFrame:
     df = yf.download(ticker, start=start_date, end=end_date, progress=False)
 
     df =  (
@@ -80,7 +81,8 @@ def complement_basic_data(
     asset: str,
     currency: str,
     df_a: DataFrame,
-    c: Config) -> DataFrame:
+    c: Config
+    ) -> DataFrame:
     start, end = df_a.index.year.min(), df_a.index.year.max()
 
     df_b = download(

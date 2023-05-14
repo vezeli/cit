@@ -15,8 +15,8 @@ def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:
         df = (
             df
             .copy()
-            .assign(Cost_per_unit = lambda x: (-1 * np.sign(x[c._AMOUNT])) * x[c._PRICE])
-            .rename(columns={"Cost_per_unit": _COST})
+            .assign(Cost = lambda x: (-1 * np.sign(x[c._AMOUNT])) * x[c._PRICE])
+            .rename(columns={"Cost": _COST})
         )
         return df
 
@@ -66,44 +66,17 @@ def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:
     )
 
 
-def _calculate_PNL(df: DataFrame, c: Config) -> DataFrame:
-    # PNL can be calculated only for sell transactions (i.e., when `amount` is
-    # negative), because buy transactions do not have any profit and loss.
-    df = (
-        df
-        .copy()
-        .query(f"{c._AMOUNT} < 0")
-        .assign(
-            PNL = lambda x:
-                (-1 * x[c._AMOUNT]) * (x[c._PRICE] - x[c._ACQUISITION_PRICE])
-        )
-        .rename(columns={"PNL": c._PNL})
-    )
-    return df
-
-
-def calculate_PNL(df: DataFrame, c: Config) -> DataFrame:
-    df = (
-        df
-        .copy()
-        .pipe(calculate_acquisition_prices, c=c)
-        .pipe(_calculate_PNL, c=c)
-    )
-    return df
-
-
-def calculate_PNL_per_year(financial_year: N, df: DataFrame, c: Config) -> DataFrame:
-    df =  df.pipe(calculate_PNL, c=c)
-    return df.loc[df.index.year == financial_year]
-
-
 def calculate_statistics(df: DataFrame, c: Config) -> DataFrame:
     df = df.pipe(calculate_acquisition_prices, c=c)
 
     bought_amount: R = df.loc[df[c._AMOUNT] > 0, c._AMOUNT].sum()
     sold_amount: R = df.loc[df[c._AMOUNT] < 0, c._AMOUNT].sum()
     remaining: R = bought_amount + sold_amount
-    average_buying_price: R = df.loc[:, c._ACQUISITION_PRICE].tail(1).squeeze()
+
+    if (df := df.loc[:, c._ACQUISITION_PRICE]).empty:
+        average_buying_price = 0.0
+    else:
+        average_buying_price: R = df.tail(1).squeeze()
 
     df = DataFrame(
         {
@@ -123,19 +96,77 @@ def calculate_statistics(df: DataFrame, c: Config) -> DataFrame:
     return df
 
 
+def _calculate_PNL(df: DataFrame, c: Config, transform_ccy: bool) -> DataFrame:
+    # NOTE: Profit and loss (PNL) can be calculated only for sell transactions
+    # (i.e., when `c._AMOUNT` is negative), because buy transactions do not
+    # have any profit and loss.
 
-def calculate_skatteverket(financial_year: N, df: DataFrame, c: Config) -> DataFrame:
+    # NOTE: This is an overloading trick, `_calculate_PNL` calculates `c._PNL`
+    # denominated in same currency as the asset (i.e., `c._PRICE`) and
+    # `c._FX_RATE` transforms `c._PNL` and `c._PRICE` to the domestic currency.
+    # Setting the foreign exchange rates to 1 ensures that `c._PNL` and
+    # `c._PRICE` stay in the asset-denominated currency.
+    if transform_ccy:
+        pass
+    else:
+        df[c._FX_RATE] = 1
+
+    df = (
+        df
+        .copy()
+        .query(f"{c._AMOUNT} < 0")
+        .assign(
+            PNL = lambda x:
+                (-1 * x[c._AMOUNT]) * x[c._FX_RATE] * (x[c._PRICE] - x[c._ACQUISITION_PRICE])
+        )
+        .rename(columns={"PNL": c._PNL})
+    )
+    return df
+
+
+def calculate_PNL(df: DataFrame, c: Config, transform_ccy: bool) -> DataFrame:
+    df = (
+        df
+        .copy()
+        .pipe(calculate_acquisition_prices, c=c)
+        .pipe(_calculate_PNL, c=c, transform_ccy=transform_ccy)
+    )
+    return df
+
+
+def calculate_PNL_per_year(
+    financial_year: N,
+    df: DataFrame,
+    c: Config,
+    transform_ccy: bool
+    ) -> DataFrame:
+    df = df.pipe(calculate_PNL, c=c, transform_ccy=transform_ccy)
+    return df.loc[df.index.year == financial_year]
+
+
+def calculate_skatteverket(
+    financial_year: N,
+    df: DataFrame,
+    c: Config,
+    transform_ccy: bool,
+    ) -> DataFrame:
     df = df.loc[df.index.year == financial_year]
 
     bought = df.loc[df[c._AMOUNT] > 0, c._AMOUNT].sum()
     sold = df.loc[df[c._AMOUNT] < 0, c._AMOUNT].sum()
 
-    df_ = df.pipe(calculate_PNL, c)
+    df_ = df.pipe(calculate_PNL, c=c, transform_ccy=transform_ccy)
+
+    # NOTE: Same overloading trick like in `_calculate_PNL`.
+    if transform_ccy:
+        pass
+    else:
+        df_[c._FX_RATE] = 1
 
     recieved = (
         df_
         .assign(Recieved = lambda x:
-            (-1 * x[c._AMOUNT]) * x[c._PRICE]
+            (-1 * x[c._AMOUNT]) * x[c._PRICE] * x[c._FX_RATE]
         )
         .Recieved
         .sum()
@@ -144,7 +175,7 @@ def calculate_skatteverket(financial_year: N, df: DataFrame, c: Config) -> DataF
     payed = (
         df_
         .assign(Payed = lambda x:
-            (-1 * x[c._AMOUNT]) * x[c._ACQUISITION_PRICE]
+            (-1 * x[c._AMOUNT]) * x[c._ACQUISITION_PRICE] * x[c._FX_RATE]
         )
         .Payed
         .sum()
@@ -155,21 +186,24 @@ def calculate_skatteverket(financial_year: N, df: DataFrame, c: Config) -> DataF
     )
     taxable = df_[c._TAXABLE].sum()
 
-    df = DataFrame(
-        {
-            "Amount bought": [bought],
-            "Amount sold": [sold],
-            "Recieved": [recieved],
-            "Payed": [payed],
-            "Taxable": [taxable],
-        }
-    ).round(
-        {
-            "Amount bought": 5,
-            "Amount sold": 5,
-            "Recieved": 2,
-            "Payed": 2,
-            "Taxable": 2,
-        }
+    df = (
+        DataFrame(
+            {
+                "Amount bought": [bought],
+                "Amount sold": [sold],
+                "Recieved": [recieved],
+                "Payed": [payed],
+                "Taxable": [taxable],
+            }
+        )
+        .round(
+            {
+                "Amount bought": 5,
+                "Amount sold": 5,
+                "Recieved": 2,
+                "Payed": 2,
+                "Taxable": 2,
+            }
+        )
     )
     return df

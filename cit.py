@@ -69,22 +69,22 @@ def list_transactions(args):
         pass
 
     if args.mode == "all":
-        print(format_DF(df, title="YOU'VE BOUGHT & SOLD:", index=True))
-    elif args.mode == "bought":
+        print(format_DF(df, title="ALL TRANSACTIONS", index=True))
+    elif args.mode == "buy":
         df_buy: DataFrame = df.query(f"{config._AMOUNT} > 0")
         print(
             format_DF(
                 df_buy,
-                title="YOU'VE BOUGHT:",
+                title="BUY TRANSACTIONS",
                 index=True,
             )
         )
-    elif args.mode == "sold":
+    elif args.mode == "sell":
         df_sell: DataFrame = df.query(f"{config._AMOUNT} < 0")
         print(
             format_DF(
                 df_sell,
-                title="YOU'VE SOLD:",
+                title="SELL TRANSACTIONS",
                 index=True,
             )
         )
@@ -112,36 +112,19 @@ def summary(args):
     )
 
     if args.year:
-        df = df[df.index.year <= args.year]
+        year = args.year
+        df = df[df.index.year <= year]
     else:
-        args.year = df.index[-1].year
+        year = df.index[-1].year
         df = df
 
     df: DataFrame = df.pipe(calculate_statistics, c=config)
 
-    if args.ccy:
-        currency = read_json_with_config(c=config)[config._CURRENCY]
-        fx_rate: R = (
-            download(
-                ticker=f"{currency}USD=X",
-                start_date=datetime(year=args.year, month=1, day=1),
-                end_date=datetime(year=args.year, month=12, day=31),
-            )
-            .apply(lambda x: 1/x)
-            .tail(1)
-            .squeeze()
-        )
-        column_infix = f" ({currency})"
-    else:
-        fx_rate = 1.0
-        column_infix = ""
-
     df = (
         df
-        .apply(lambda x: fx_rate * x if x.name == "Average buying price" else x)
         .rename(
             columns={
-                "Average buying price": f"Average price{column_infix} / coin"
+                "Average buying price": f"Average price/coin"
             }
         )
     )
@@ -149,9 +132,68 @@ def summary(args):
     print(
         format_DF(
             df,
-            title="SUMMARY:",
+            title="SUMMARY",
         )
     )
+
+    if args.mute:
+        print(_WARRANTY)
+    else:
+        pass
+
+
+def calculate(args):
+    global _WARRANTY, config
+
+    config._INPUT_FILE = args.infile
+
+    df: DataFrame = (
+        read_in_transactions(config)
+        .round(
+            {
+                config._AMOUNT: 6,
+                config._PRICE: 2,
+                config._FX_RATE: 2
+            }
+        )
+    )
+
+    if args.year:
+        year = args.year
+    else:
+        year = df.index[-1].year
+
+    if args.ccy:
+        currency = read_json_with_config(c=config)[config._CURRENCY]
+        currency_infix = f"({currency})"
+    else:
+        currency_infix = ""
+
+    if args.mode == "pnl":
+        print(
+            format_DF(
+                calculate_PNL_per_year(
+                    financial_year=year,
+                    df=df,
+                    c=config,
+                    transform_ccy=args.ccy,
+                ),
+                title=f"PROFIT AND LOSS {currency_infix}",
+                index=True,
+            )
+        )
+    elif args.mode == "taxes":
+        print(
+            format_DF(
+                calculate_skatteverket(
+                    financial_year=year,
+                    df=df,
+                    c=config,
+                    transform_ccy=args.ccy,
+                ),
+                title=f"TAX LIABILITY {currency_infix}",
+            )
+        )
 
     if args.mute:
         print(_WARRANTY)
@@ -176,20 +218,23 @@ if __name__ == "__main__":
         help="available subcommands",
     )
 
-    list_parser = subparsers.add_parser("transactions", help="lists transactions")
+    list_parser = subparsers.add_parser(
+        "transactions",
+        help="lists transactions",
+    )
     list_parser.add_argument(
         "mode",
         nargs="?",
         const="all",
         default="all",
-        choices=["all", "bought", "sold"],
+        choices=["all", "buy", "sell"],
         help="choose transaction",
     )
     list_parser.add_argument(
         "-f", "--file",
         default=config._INPUT_FILE,
         type=str,
-        help="select input file",
+        help="select file for processing",
         dest="infile",
     )
     list_parser.add_argument(
@@ -203,22 +248,25 @@ if __name__ == "__main__":
         "-c",
         "--ccy",
         action="store_true",
-        help="show market price in domestic CCY",
+        help="show market price in domestic currency",
     )
     list_parser.add_argument(
         "-m",
         "--mute",
         action="store_false",
-        help="suppress program's warranty",
+        help="suppress warranty message",
     )
     list_parser.set_defaults(func=list_transactions)
 
-    summary_parser = subparsers.add_parser("summary", help="shows current position")
+    summary_parser = subparsers.add_parser(
+        "summary",
+        help="shows current position",
+    )
     summary_parser.add_argument(
         "-f", "--file",
         default=config._INPUT_FILE,
         type=str,
-        help="select input file",
+        help="select file for processing",
         dest="infile",
     )
     summary_parser.add_argument(
@@ -229,18 +277,49 @@ if __name__ == "__main__":
         help="select year",
     )
     summary_parser.add_argument(
-        "-c",
-        "--ccy",
-        action="store_true",
-        help="show price in domestic CCY",
-    )
-    summary_parser.add_argument(
         "-m",
         "--mute",
         action="store_false",
-        help="suppress program's warranty",
+        help="suppress warranty message",
     )
     summary_parser.set_defaults(func=summary)
+
+    calculate_parser = subparsers.add_parser(
+        "calculate",
+        help="makes tax-related calculations",
+    )
+    calculate_parser.add_argument(
+        "mode",
+        choices=["pnl", "taxes"],
+        help="choose calculation",
+    )
+    calculate_parser.add_argument(
+        "-f", "--file",
+        default=config._INPUT_FILE,
+        type=str,
+        help="select file for processing",
+        dest="infile",
+    )
+    calculate_parser.add_argument(
+        "-y",
+        "--year",
+        default=None,
+        type=int,
+        help="select year",
+    )
+    calculate_parser.add_argument(
+        "-c",
+        "--ccy",
+        action="store_false",
+        help="show price in the asset-priced currency",
+    )
+    calculate_parser.add_argument(
+        "-m",
+        "--mute",
+        action="store_false",
+        help="suppress warranty message",
+    )
+    calculate_parser.set_defaults(func=calculate)
 
     args = parser.parse_args()
 
@@ -249,59 +328,3 @@ if __name__ == "__main__":
     args.func(args)
 
     print()
-
-
-    #parser.add_argument("year", type=int, default=datetime.now().year, help="select a financial year")
-    #parser.add_argument("-i", "--file", type=str, dest="file", default=config._INPUT_FILE, help="select an input file")
-    #parser.add_argument("-s", "--statistics", action="store_true", help="show basic statistics")
-    #parser.add_argument("-d", "--details", action="store_true", help="show P&L of transactions instead of tax liability")
-    #parser.add_argument("-m", "--mute", action="store_false", help="suppress showing the disclaimer")
-    #args = parser.parse_args()
-
-    #config._INPUT_FILE = args.file
-
-    #df = read_in_transactions(config)
-
-    #print()
-    #
-    #if not args.details:
-    #    print(
-    #        format_DF(
-    #            calculate_skatteverket(
-    #                financial_year=args.year,
-    #                df=df,
-    #                c=config,
-    #            ),
-    #            title="TAXATION:",
-    #        )
-    #    )
-    #else:
-    #    print(
-    #        format_DF(
-    #            calculate_PNL_per_year(
-    #                financial_year=args.year,
-    #                df=df,
-    #                c=config,
-    #            ),
-    #            title="DETAILED TRANSACTIONS:",
-    #            index=True,
-    #        )
-    #    )
-    #
-    #if args.statistics:
-    #    print()
-    #    print(
-    #        format_DF(
-    #            calculate_statistics(
-    #                financial_year=args.year,
-    #                df=df,
-    #                c=config,
-    #            ),
-    #            title="STATISTICS:",
-    #        )
-    #    )
-    #else:
-    #    pass
-
-    #print()
-
