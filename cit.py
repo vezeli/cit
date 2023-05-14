@@ -17,7 +17,7 @@ from formatting import df_select_year, format_DF
 
 _PROGRAM_NAME = "cit"
 
-_DESCRIPTION = "CIT is a Capital Income Tax calculator for cryptocurrencies."
+_DESCRIPTION = "CIT is a minimalistic Capital Income Tax calculator for cryptocurrencies."
 
 _WARRANTY = (
 """
@@ -215,7 +215,6 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(
         title="subcommands",
         dest="subcommand",
-        help="available subcommands",
     )
 
     list_parser = subparsers.add_parser(
@@ -228,13 +227,13 @@ if __name__ == "__main__":
         const="all",
         default="all",
         choices=["all", "buy", "sell"],
-        help="choose transaction",
+        help="choose transaction type",
     )
     list_parser.add_argument(
         "-f", "--file",
         default=config._INPUT_FILE,
         type=str,
-        help="select file for processing",
+        help="select a file for processing",
         dest="infile",
     )
     list_parser.add_argument(
@@ -248,7 +247,7 @@ if __name__ == "__main__":
         "-c",
         "--ccy",
         action="store_true",
-        help="show market price in domestic currency",
+        help="calculate market price in domestic currency",
     )
     list_parser.add_argument(
         "-m",
@@ -266,7 +265,7 @@ if __name__ == "__main__":
         "-f", "--file",
         default=config._INPUT_FILE,
         type=str,
-        help="select file for processing",
+        help="select a file for processing",
         dest="infile",
     )
     summary_parser.add_argument(
@@ -274,7 +273,7 @@ if __name__ == "__main__":
         "--year",
         default=None,
         type=int,
-        help="select year",
+        help="create summary for the provided year",
     )
     summary_parser.add_argument(
         "-m",
@@ -297,7 +296,7 @@ if __name__ == "__main__":
         "-f", "--file",
         default=config._INPUT_FILE,
         type=str,
-        help="select file for processing",
+        help="select a file for processing",
         dest="infile",
     )
     calculate_parser.add_argument(
@@ -305,7 +304,7 @@ if __name__ == "__main__":
         "--year",
         default=None,
         type=int,
-        help="select year",
+        help="calculate tax liability for the provided year",
     )
     calculate_parser.add_argument(
         "-c",
