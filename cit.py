@@ -131,17 +131,17 @@ def summary(args):
             .tail(1)
             .squeeze()
         )
-        column_suffix = f" ({currency})"
+        column_infix = f" ({currency})"
     else:
         fx_rate = 1.0
-        column_suffix = ""
+        column_infix = ""
 
     df = (
         df
         .apply(lambda x: fx_rate * x if x.name == "Average buying price" else x)
         .rename(
             columns={
-                "Average buying price": "Average buying price" + column_suffix
+                "Average buying price": f"Average price{column_infix} / coin"
             }
         )
     )
@@ -152,15 +152,6 @@ def summary(args):
             title="SUMMARY:",
         )
     )
-
-    #if args.ccy:
-    #    df = (
-    #        df
-    #        .assign(price=lambda x: x[config._AMOUNT] * x[config._FX_RATE])
-    #        .round({"price": 2})
-    #    )
-    #else:
-    #    pass
 
     if args.mute:
         print(_WARRANTY)
@@ -185,7 +176,7 @@ if __name__ == "__main__":
         help="available subcommands",
     )
 
-    list_parser = subparsers.add_parser("list", help="lists transactions")
+    list_parser = subparsers.add_parser("transactions", help="lists transactions")
     list_parser.add_argument(
         "mode",
         nargs="?",
@@ -206,13 +197,13 @@ if __name__ == "__main__":
         "--year",
         default=None,
         type=int,
-        help="select year",
+        help="filter transactions by year",
     )
     list_parser.add_argument(
         "-c",
         "--ccy",
         action="store_true",
-        help="show price in domestic CCY",
+        help="show market price in domestic CCY",
     )
     list_parser.add_argument(
         "-m",
@@ -222,7 +213,7 @@ if __name__ == "__main__":
     )
     list_parser.set_defaults(func=list_transactions)
 
-    summary_parser = subparsers.add_parser("summary", help="provides summary")
+    summary_parser = subparsers.add_parser("summary", help="shows current position")
     summary_parser.add_argument(
         "-f", "--file",
         default=config._INPUT_FILE,
