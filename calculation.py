@@ -97,27 +97,18 @@ def calculate_PNL_per_year(financial_year: N, df: DataFrame, c: Config) -> DataF
     return df.loc[df.index.year == financial_year]
 
 
-def calculate_statistics(financial_year: N, df: DataFrame, c: Config) -> DataFrame:
-    df = (
-        df
-        .pipe(calculate_acquisition_prices, c=c)
-        .loc[df.index.year == financial_year]
-    )
+def calculate_statistics(df: DataFrame, c: Config) -> DataFrame:
+    df = df.pipe(calculate_acquisition_prices, c=c)
 
-    bought: R = df.loc[df[c._AMOUNT] > 0, c._AMOUNT].sum()
-    sold: R = df.loc[df[c._AMOUNT] < 0, c._AMOUNT].sum()
-    remaining: R = bought + sold
-    average_buying_price: R = (
-            df
-            .loc[:, c._ACQUISITION_PRICE]
-            .tail(1)
-            .squeeze()
-    )
+    bought_amount: R = df.loc[df[c._AMOUNT] > 0, c._AMOUNT].sum()
+    sold_amount: R = df.loc[df[c._AMOUNT] < 0, c._AMOUNT].sum()
+    remaining: R = bought_amount + sold_amount
+    average_buying_price: R = df.loc[:, c._ACQUISITION_PRICE].tail(1).squeeze()
 
     df = DataFrame(
         {
-            "Amount bought": [bought],
-            "Amount sold": [sold],
+            "Amount bought": [bought_amount],
+            "Amount sold": [sold_amount],
             "Remaining": [remaining],
             "Average buying price": [average_buying_price],
         }
