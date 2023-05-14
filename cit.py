@@ -146,6 +146,7 @@ def calculate(args):
     global _WARRANTY, config
 
     config._INPUT_FILE = args.infile
+    config._DEDUCTIBLE = args.deductible
 
     df: DataFrame = (
         read_in_transactions(config)
@@ -293,7 +294,8 @@ if __name__ == "__main__":
         help="choose calculation",
     )
     calculate_parser.add_argument(
-        "-f", "--file",
+        "-f",
+        "--file",
         default=config._INPUT_FILE,
         type=str,
         help="select a file for processing",
@@ -311,6 +313,13 @@ if __name__ == "__main__":
         "--ccy",
         action="store_false",
         help="show price in the asset-priced currency",
+    )
+    calculate_parser.add_argument(
+        "-d",
+        "--deductible",
+        default=config._DEDUCTIBLE,
+        type=float,
+        help="select a percentage of deductible amount of loss",
     )
     calculate_parser.add_argument(
         "-m",
