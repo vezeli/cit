@@ -21,20 +21,14 @@ _DESCRIPTION = "CIT is a minimalistic Capital Income Tax calculator for cryptocu
 _WARRANTY = (
 """
 +--------------------------------------------------+
-| * * * * * * * * * WARRANTY * * * * * * * * * * * |
-+==================================================+
-| This program is provided "as is" without any     |
-| warranty, expressed or implied, including but    |
-| not limited to the implied warranties of         |
-| merchantability and fitness for a particular     |
-| purpose. The user assumes all risks associated   |
-| with the quality and performance of the program. |
-| If the program is defective, the user assumes    |
-| the cost of all necessary servicing, repair or   |
-| correction.                                      |
+| NOTE:                                            |
+| The program is not a substitute for professional |
+| accounting advice. You should always seek the    |
+| guidance of a qualified accountant or tax        |
+| professional for accurate and comprehensive tax  |
+| advice.                                          |
 +--------------------------------------------------+"""
 )
-
 
 def list_transactions(args):
     global _WARRANTY, config
@@ -143,7 +137,7 @@ def summary(args):
     print(
         format_DF(
             df,
-            title="SUMMARY",
+            title="AGGREGATED TRADE STATISTICS",
             m=column_map,
             index=False,
         )
@@ -177,37 +171,48 @@ def calculate(args):
     else:
         year = df.index[-1].year
 
-    if args.ccy:
-        currency = read_json_with_config(c=config)[config._CURRENCY]
-        currency_infix = f"({currency})"
+    d = read_json_with_config(config)
+    asset_currency = d[config._ASSET_CURRENCY]
+    domestic_currency = d[config._CURRENCY]
+    if not args.ccy:
+        currency = domestic_currency
+        fx_ticker = f"{asset_currency}{domestic_currency}"
     else:
-        currency_infix = ""
+        currency = asset_currency
+        fx_ticker = f"{asset_currency}{asset_currency}"
 
     if args.mode == "pnl":
-        print(
-            format_DF(
-                calculate_PNL_per_year(
-                    financial_year=year,
-                    df=df,
-                    c=config,
-                    transform_ccy=args.ccy,
-                ),
-                title=f"PROFIT AND LOSS",
-                index=True,
-            )
+        df = calculate_PNL_per_year(
+            financial_year=year,
+            df=df,
+            c=config,
+            ccy=args.ccy,
         )
+        title = f"P&L IN {year}"
+        column_map = {
+            config._AMOUNT: config._AMOUNT.capitalize(),
+            config._PRICE: f"{config._PRICE.capitalize()} ({asset_currency})",
+            config._FX_RATE: f"{fx_ticker}",
+            config._ACQUISITION_PRICE: f"{config._ACQUISITION_PRICE.capitalize()} ({asset_currency})",
+            "P&L": f"P&L ({currency})",
+        }
+        index = True
     elif args.mode == "taxes":
-        print(
-            format_DF(
-                calculate_skatteverket(
-                    financial_year=year,
-                    df=df,
-                    c=config,
-                    transform_ccy=args.ccy,
-                ),
-                title=f"TAX LIABILITY",
-            )
+        df = calculate_skatteverket(
+            financial_year=year,
+            df=df,
+            c=config,
+            ccy=args.ccy,
         )
+        title = f"TAX LIABILITY FOR {year}"
+        column_map = {
+            "Payed": f"Payed ({currency})",
+            "Received": f"Received ({currency})",
+            "Taxable": f"Taxable ({currency})",
+        }
+        index = False
+
+    print(format_DF(df, title=title, m=column_map, index=index))
 
     if args.mute:
         print(_WARRANTY)
@@ -307,7 +312,8 @@ if __name__ == "__main__":
 
     calculate_parser = subparsers.add_parser(
         "calculate",
-        help="preforms tax-related calculations",
+        aliases=["get"],
+        help="make tax-related calculations",
     )
     calculate_parser.add_argument(
         "mode",

@@ -119,7 +119,7 @@ def calculate_statistics(
     return df
 
 
-def _calculate_PNL(df: DataFrame, c: Config, transform_ccy: bool) -> DataFrame:
+def _calculate_PNL(df: DataFrame, c: Config, ccy: bool) -> DataFrame:
     # NOTE: Profit and loss (PNL) can be calculated only for sell transactions
     # (i.e., when `c._AMOUNT` is negative), because buy transactions do not
     # have any profit and loss.
@@ -129,7 +129,7 @@ def _calculate_PNL(df: DataFrame, c: Config, transform_ccy: bool) -> DataFrame:
     # `c._FX_RATE` transforms `c._PNL` and `c._PRICE` to the domestic currency.
     # Setting the foreign exchange rates to 1 ensures that `c._PNL` and
     # `c._PRICE` stay in the asset-denominated currency.
-    if transform_ccy:
+    if not ccy:
         pass
     else:
         df[c._FX_RATE] = 1
@@ -147,12 +147,12 @@ def _calculate_PNL(df: DataFrame, c: Config, transform_ccy: bool) -> DataFrame:
     return df
 
 
-def calculate_PNL(df: DataFrame, c: Config, transform_ccy: bool) -> DataFrame:
+def calculate_PNL(df: DataFrame, c: Config, ccy: bool) -> DataFrame:
     df = (
         df
         .copy()
         .pipe(calculate_acquisition_prices, c=c)
-        .pipe(_calculate_PNL, c=c, transform_ccy=transform_ccy)
+        .pipe(_calculate_PNL, c=c, ccy=ccy)
     )
     return df
 
@@ -161,17 +161,19 @@ def calculate_PNL_per_year(
     financial_year: N,
     df: DataFrame,
     c: Config,
-    transform_ccy: bool
+    ccy: bool
     ) -> DataFrame:
-    df = df.pipe(calculate_PNL, c=c, transform_ccy=transform_ccy)
-    return df.loc[df.index.year == financial_year]
+    df = calculate_PNL(df=df, c=c, ccy=ccy)
+    df = df.loc[df.index.year == financial_year]
+    df.index = df.index.date
+    return df
 
 
 def calculate_skatteverket(
     financial_year: N,
     df: DataFrame,
     c: Config,
-    transform_ccy: bool,
+    ccy: bool,
     ) -> DataFrame:
     df_transactions = df.loc[df.index.year == financial_year]
     bought_amount: R = (
@@ -185,21 +187,22 @@ def calculate_skatteverket(
         .sum()
     )
 
-    df_pnl = calculate_PNL(df=df, c=c, transform_ccy=transform_ccy)
+    df_pnl = calculate_PNL(df=df, c=c, ccy=ccy)
     df_pnl = df_pnl.loc[df_pnl.index.year == financial_year]
 
-    if transform_ccy:
+    if not ccy:
         pass
     else:
-        df_pnl[c._FX_RATE] = 1
+        df_transactions.loc[:, c._FX_RATE] = 1
+        df_pnl.loc[:, c._FX_RATE] = 1
 
     recieved = (
         df_transactions
         .loc[df_transactions[c._AMOUNT] < 0]
-        .assign(Recieved = lambda x:
+        .assign(Received = lambda x:
             (-1 * x[c._AMOUNT]) * x[c._PRICE] * x[c._FX_RATE]
         )
-        .Recieved
+        .Received
         .sum()
     )
 
@@ -224,16 +227,16 @@ def calculate_skatteverket(
             {
                 "Amount bought": [bought_amount],
                 "Amount sold": [sold_amount],
-                "Recieved": [recieved],
+                "Received": [recieved],
                 "Payed": [payed],
                 "Taxable": [taxable],
             }
         )
         .round(
             {
-                "Amount bought": 5,
-                "Amount sold": 5,
-                "Recieved": 2,
+                "Amount bought": 6,
+                "Amount sold": 6,
+                "Received": 2,
                 "Payed": 2,
                 "Taxable": 2,
             }
