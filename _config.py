@@ -9,6 +9,7 @@ class Config:
     _BASIC: str = "BACIS"
     _COMPLETE: str = "COMPLETE"
     _ASSET: str  = "Asset"
+    _ASSET_CURRENCY: str = "AssetPriceCurrency"
     _CURRENCY: str = "Currency"
     _TRANSACTIONS: str = "Transactions"
     _DATE: str = "date"

@@ -51,6 +51,7 @@ def read_in_transactions(c: Config) -> DataFrame:
 
     asset = d[c._ASSET]
     currency = d[c._CURRENCY]
+    _ = d[c._ASSET_CURRENCY]
     transactions = d[c._TRANSACTIONS]
 
     transaction_data_type = check_transaction_data_type(transactions, c)
@@ -65,7 +66,7 @@ def read_in_transactions(c: Config) -> DataFrame:
     if transaction_data_type == c._BASIC:
         df = complement_basic_data(d[c._ASSET], d[c._CURRENCY], df, c)
     elif transaction_data_type == c._COMPLETE:
-        df = df
+        pass
     else:
         raise ValueError
 

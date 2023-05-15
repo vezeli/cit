@@ -1,5 +1,6 @@
 {
 	"Asset": "BTC-USD",
+	"AssetPriceCurrency": "USD",
 	"Currency": "SEK",
 	"Transactions": [
 		{"date": "2022-05-01", "amount":   0.500, "market price": 40000.0000, "exchange rate": 1},

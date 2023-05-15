@@ -12,7 +12,7 @@ from calculation import (
     calculate_statistics,
 )
 from data import read_json_with_config, read_in_transactions
-from formatting import df_select_year, format_DF
+from formatting import format_DF
 
 _PROGRAM_NAME = "cit"
 
@@ -21,8 +21,8 @@ _DESCRIPTION = "CIT is a minimalistic Capital Income Tax calculator for cryptocu
 _WARRANTY = (
 """
 +--------------------------------------------------+
-|                   WARRANTY                       |
-+--------------------------------------------------+
+| * * * * * * * * * WARRANTY * * * * * * * * * * * |
++==================================================+
 | This program is provided "as is" without any     |
 | warranty, expressed or implied, including but    |
 | not limited to the implied warranties of         |
@@ -52,41 +52,49 @@ def list_transactions(args):
         )
     )
 
-    if args.year:
-        df = df.pipe(df_select_year, financial_year=args.year)
-    else:
-        df = df
-    df.index = df.index.date
-
     if args.ccy:
         df = (
             df
-            .assign(price=lambda x: x[config._PRICE] * x[config._FX_RATE])
-            .round({"price": 2})
+            .assign(DomesticMV=lambda x: x[config._PRICE] * x[config._FX_RATE])
+            .round({"DomesticMV": 2})
         )
     else:
         pass
 
+    if args.year:
+        df = df.loc[df.index.year == args.year]
+    else:
+        pass
+    df.index = df.index.date
+
     if args.mode == "all":
-        print(format_DF(df, title="ALL TRANSACTIONS", index=True))
+        df = df
+        title = "ALL TRANSACTIONS"
     elif args.mode == "buy":
-        df_buy: DataFrame = df.query(f"{config._AMOUNT} > 0")
-        print(
-            format_DF(
-                df_buy,
-                title="BUY TRANSACTIONS",
-                index=True,
-            )
-        )
+        df = df.query(f"{config._AMOUNT} > 0")
+        title = "BUY TRANSACTIONS"
     elif args.mode == "sell":
-        df_sell: DataFrame = df.query(f"{config._AMOUNT} < 0")
-        print(
-            format_DF(
-                df_sell,
-                title="SELL TRANSACTIONS",
-                index=True,
-            )
+        df = df.query(f"{config._AMOUNT} < 0")
+        title = "SELL TRANSACTIONS"
+
+    d = read_json_with_config(config)
+    asset_currency = d[config._ASSET_CURRENCY]
+    domestic_currency = d[config._CURRENCY]
+    column_map = {
+        config._AMOUNT: config._AMOUNT.capitalize(),
+        config._PRICE: f"{config._PRICE.capitalize()} ({asset_currency})",
+        config._FX_RATE: config._FX_RATE.capitalize(),
+        "DomesticMV": f"{config._PRICE.capitalize()} ({domestic_currency})",
+    }
+
+    print(
+        format_DF(
+            df=df,
+            title=title,
+            m=column_map,
+            index=True,
         )
+    )
 
     if args.mute:
         print(_WARRANTY)
@@ -112,26 +120,32 @@ def summary(args):
 
     if args.year:
         year = args.year
-        df = df[df.index.year <= year]
     else:
         year = df.index[-1].year
-        df = df
 
-    df: DataFrame = df.pipe(calculate_statistics, c=config)
-
-    df = (
-        df
-        .rename(
-            columns={
-                "Average buying price": f"Average price/coin"
-            }
-        )
+    df: DataFrame = calculate_statistics(
+        financial_year=year,
+        df=df,
+        c=config,
+        ccy=args.ccy,
     )
+
+    d = read_json_with_config(config)
+    if not args.ccy:
+        currency = d[config._ASSET_CURRENCY]
+    else:
+        currency = d[config._CURRENCY]
+
+    column_map = {
+        "Average buying price": f"Average buying price ({currency})",
+    }
 
     print(
         format_DF(
             df,
             title="SUMMARY",
+            m=column_map,
+            index=False,
         )
     )
 
@@ -178,7 +192,7 @@ def calculate(args):
                     c=config,
                     transform_ccy=args.ccy,
                 ),
-                title=f"PROFIT AND LOSS {currency_infix}",
+                title=f"PROFIT AND LOSS",
                 index=True,
             )
         )
@@ -191,7 +205,7 @@ def calculate(args):
                     c=config,
                     transform_ccy=args.ccy,
                 ),
-                title=f"TAX LIABILITY {currency_infix}",
+                title=f"TAX LIABILITY",
             )
         )
 
@@ -219,7 +233,8 @@ if __name__ == "__main__":
 
     list_parser = subparsers.add_parser(
         "transactions",
-        help="lists transactions",
+        aliases=["ls"],
+        help="list transactions",
     )
     list_parser.add_argument(
         "mode",
@@ -247,7 +262,7 @@ if __name__ == "__main__":
         "-c",
         "--ccy",
         action="store_true",
-        help="calculate market price in domestic currency",
+        help="show price in domestic currency",
     )
     list_parser.add_argument(
         "-m",
@@ -259,7 +274,8 @@ if __name__ == "__main__":
 
     summary_parser = subparsers.add_parser(
         "summary",
-        help="shows current position",
+        aliases=["agg"],
+        help="aggregate transactions into current holding",
     )
     summary_parser.add_argument(
         "-f", "--file",
@@ -273,7 +289,13 @@ if __name__ == "__main__":
         "--year",
         default=None,
         type=int,
-        help="create summary for the provided year",
+        help="make summary for the end of the provided year",
+    )
+    summary_parser.add_argument(
+        "-c",
+        "--ccy",
+        action="store_true",
+        help="show price in domestic currency",
     )
     summary_parser.add_argument(
         "-m",
@@ -285,7 +307,7 @@ if __name__ == "__main__":
 
     calculate_parser = subparsers.add_parser(
         "calculate",
-        help="makes tax-related calculations",
+        help="preforms tax-related calculations",
     )
     calculate_parser.add_argument(
         "mode",

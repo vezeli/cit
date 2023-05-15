@@ -66,30 +66,53 @@ def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:
     )
 
 
-def calculate_statistics(df: DataFrame, c: Config) -> DataFrame:
-    df = df.pipe(calculate_acquisition_prices, c=c)
+def calculate_statistics(
+    financial_year: int,
+    df: DataFrame,
+    c: Config,
+    ccy: bool,
+    ) -> DataFrame:
+    df_transactions = df.loc[df.index.year <= financial_year]
 
-    bought_amount: R = df.loc[df[c._AMOUNT] > 0, c._AMOUNT].sum()
-    sold_amount: R = df.loc[df[c._AMOUNT] < 0, c._AMOUNT].sum()
-    remaining: R = bought_amount + sold_amount
+    amount_bought: R = (
+        df_transactions
+        .loc[df_transactions[c._AMOUNT] > 0, c._AMOUNT]
+        .sum()
+    )
+    amount_sold: R = (
+        df_transactions
+        .loc[df_transactions[c._AMOUNT] < 0, c._AMOUNT]
+        .sum()
+    )
+    amount_remaining: R = amount_bought + amount_sold
 
-    if (df := df.loc[:, c._ACQUISITION_PRICE]).empty:
-        average_buying_price = 0.0
+    df_ = calculate_acquisition_prices(df, c=c)
+    df_ = df_.loc[df_.index.year <= financial_year]
+
+    if df_.empty:
+        avg_buying_price = 0.0
     else:
-        average_buying_price: R = df.tail(1).squeeze()
+        acquisition_price = df_[c._ACQUISITION_PRICE].tail(1).squeeze()
+        fx_rate = df_[c._FX_RATE].tail(1).squeeze()
+        if not ccy:
+            avg_buying_price: R = acquisition_price
+            currency = c._ASSET_CURRENCY
+        else:
+            avg_buying_price: R = acquisition_price * fx_rate
+            currency = c._CURRENCY
 
     df = DataFrame(
         {
-            "Amount bought": [bought_amount],
-            "Amount sold": [sold_amount],
-            "Remaining": [remaining],
-            "Average buying price": [average_buying_price],
+            "Amount bought": [amount_bought],
+            "Amount sold": [amount_sold],
+            "Remaining": [amount_remaining],
+            "Average buying price": [avg_buying_price],
         }
     ).round(
         {
-            "Amount bought": 5,
-            "Amount sold": 5,
-            "Remaining": 5,
+            "Amount bought": 6,
+            "Amount sold": 6,
+            "Remaining": 6,
             "Average buying price": 2,
         }
     )
