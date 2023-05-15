@@ -150,21 +150,29 @@ def calculate_skatteverket(
     c: Config,
     transform_ccy: bool,
     ) -> DataFrame:
-    df = df.loc[df.index.year == financial_year]
+    df_transactions = df.loc[df.index.year == financial_year]
+    bought_amount: R = (
+        df_transactions
+        .loc[df_transactions[c._AMOUNT] > 0, c._AMOUNT]
+        .sum()
+    )
+    sold_amount: R = (
+        df_transactions
+        .loc[df_transactions[c._AMOUNT] < 0, c._AMOUNT]
+        .sum()
+    )
 
-    bought = df.loc[df[c._AMOUNT] > 0, c._AMOUNT].sum()
-    sold = df.loc[df[c._AMOUNT] < 0, c._AMOUNT].sum()
+    df_pnl = calculate_PNL(df=df, c=c, transform_ccy=transform_ccy)
+    df_pnl = df_pnl.loc[df_pnl.index.year == financial_year]
 
-    df_ = df.pipe(calculate_PNL, c=c, transform_ccy=transform_ccy)
-
-    # NOTE: Same overloading trick like in `_calculate_PNL`.
     if transform_ccy:
         pass
     else:
-        df_[c._FX_RATE] = 1
+        df_pnl[c._FX_RATE] = 1
 
     recieved = (
-        df_
+        df_transactions
+        .loc[df_transactions[c._AMOUNT] < 0]
         .assign(Recieved = lambda x:
             (-1 * x[c._AMOUNT]) * x[c._PRICE] * x[c._FX_RATE]
         )
@@ -173,24 +181,26 @@ def calculate_skatteverket(
     )
 
     payed = (
-        df_
+        df_pnl
         .assign(Payed = lambda x:
-            (-1 * x[c._AMOUNT]) * x[c._ACQUISITION_PRICE] * x[c._FX_RATE]
+            x[c._AMOUNT] * x[c._ACQUISITION_PRICE] * x[c._FX_RATE]
         )
         .Payed
         .sum()
     )
 
-    df_[c._TAXABLE] = df_[c._PNL].apply(
-            lambda pnl: pnl if pnl > 0 else c._DEDUCTIBLE * pnl
+    df_pnl[c._TAXABLE] = (
+        df_pnl
+        .loc[:, c._PNL]
+        .apply(lambda pnl: pnl if pnl > 0 else c._DEDUCTIBLE * pnl)
     )
-    taxable = df_[c._TAXABLE].sum()
+    taxable = df_pnl[c._TAXABLE].sum()
 
-    df = (
+    df_rv = (
         DataFrame(
             {
-                "Amount bought": [bought],
-                "Amount sold": [sold],
+                "Amount bought": [bought_amount],
+                "Amount sold": [sold_amount],
                 "Recieved": [recieved],
                 "Payed": [payed],
                 "Taxable": [taxable],
@@ -206,4 +216,4 @@ def calculate_skatteverket(
             }
         )
     )
-    return df
+    return df_rv
