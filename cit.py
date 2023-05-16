@@ -20,14 +20,14 @@ _DESCRIPTION = "CIT is a minimalistic Capital Income Tax calculator for cryptocu
 
 _WARRANTY = (
 """
-+--------------------------------------------------+
-| NOTE:                                            |
-| The program is not a substitute for professional |
-| accounting advice. You should always seek the    |
-| guidance of a qualified accountant or tax        |
-| professional for accurate and comprehensive tax  |
-| advice.                                          |
-+--------------------------------------------------+"""
++---------------------------------------------------+
+| NOTE:                                             |
+| This program is not a substitute for professional |
+| accounting advice and should not be used as such. |
+| You should always seek the guidance of a tax      |
+| accountant and/or professional for comprehensive  |
+| and correct tax advice and calculation.           |
++---------------------------------------------------+"""
 )
 
 def list_transactions(args):
@@ -90,12 +90,6 @@ def list_transactions(args):
         )
     )
 
-    if args.mute:
-        print(_WARRANTY)
-    else:
-        pass
-
-
 def summary(args):
     global _WARRANTY, config
 
@@ -142,11 +136,6 @@ def summary(args):
             index=False,
         )
     )
-
-    if args.mute:
-        print(_WARRANTY)
-    else:
-        pass
 
 
 def calculate(args):
@@ -213,11 +202,6 @@ def calculate(args):
         index = False
 
     print(format_DF(df, title=title, m=column_map, index=index))
-
-    if args.mute:
-        print(_WARRANTY)
-    else:
-        pass
 
 
 if __name__ == "__main__":
@@ -361,5 +345,10 @@ if __name__ == "__main__":
     print()
 
     args.func(args)
+
+    if args.mute:
+        print(_WARRANTY)
+    else:
+        pass
 
     print()
