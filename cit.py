@@ -1,12 +1,10 @@
 import argparse
-from datetime import datetime
 from numbers import Real as R
 
 from pandas import DataFrame
 
 from _config import Config
 from calculation import (
-    calculate_acquisition_prices,
     calculate_PNL_per_year,
     calculate_skatteverket,
     calculate_statistics,
@@ -20,7 +18,7 @@ _DESCRIPTION = (
     "CIT is a minimalistic Capital Income Tax calculator for cryptocurrencies."
 )
 
-_WARRANTY = """
+_DISCLAIMER = """
 +---------------------------------------------------+
 | NOTE:                                             |
 | This program is not a substitute for professional |
@@ -32,9 +30,9 @@ _WARRANTY = """
 
 
 def list_transactions(args):
-    global _WARRANTY, config
+    global _DISCLAIMER, config
 
-    config._INPUT_FILE = args.infile
+    config._INPUT_FILE = args.FILE
 
     df: DataFrame = read_in_transactions(config).round(
         {config._AMOUNT: 6, config._PRICE: 2, config._FX_RATE: 2}
@@ -55,7 +53,7 @@ def list_transactions(args):
 
     if args.mode == "all":
         df = df
-        title = "ALL TRANSACTIONS"
+        title = "BUY & SELL TRANSACTIONS"
     elif args.mode == "buy":
         df = df.query(f"{config._AMOUNT} > 0")
         title = "BUY TRANSACTIONS"
@@ -84,9 +82,9 @@ def list_transactions(args):
 
 
 def summary(args):
-    global _WARRANTY, config
+    global _DISCLAIMER, config
 
-    config._INPUT_FILE = args.infile
+    config._INPUT_FILE = args.FILE
 
     df: DataFrame = read_in_transactions(config).round(
         {config._AMOUNT: 6, config._PRICE: 2, config._FX_RATE: 2}
@@ -117,17 +115,17 @@ def summary(args):
     print(
         format_DF(
             df,
-            title="AGGREGATED TRADE STATISTICS",
+            title=f"TRADE SUMMARY FOR {year}",
             m=column_map,
             index=False,
         )
     )
 
 
-def calculate(args):
-    global _WARRANTY, config
+def report(args):
+    global _DISCLAIMER, config
 
-    config._INPUT_FILE = args.infile
+    config._INPUT_FILE = args.FILE
     config._DEDUCTIBLE = args.deductible
 
     df: DataFrame = read_in_transactions(config).round(
@@ -189,8 +187,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog=_PROGRAM_NAME,
         description=_DESCRIPTION,
-        epilog=_WARRANTY,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     subparsers = parser.add_subparsers(
@@ -212,12 +208,12 @@ if __name__ == "__main__":
         help="choose transaction type",
     )
     list_parser.add_argument(
-        "-f",
-        "--file",
+        "-i",
+        "--in",
         default=config._INPUT_FILE,
         type=str,
-        help="select a file for processing",
-        dest="infile",
+        help=f"select input file from {config._DATA_PATH} dir",
+        dest="FILE",
     )
     list_parser.add_argument(
         "-y",
@@ -236,22 +232,22 @@ if __name__ == "__main__":
         "-m",
         "--mute",
         action="store_false",
-        help="suppress warranty message",
+        help="suppress disclaimer message",
     )
     list_parser.set_defaults(func=list_transactions)
 
     summary_parser = subparsers.add_parser(
         "summary",
         aliases=["agg"],
-        help="aggregate transactions into current holding",
+        help="aggregate transactions into a remaining position",
     )
     summary_parser.add_argument(
-        "-f",
-        "--file",
+        "-i",
+        "--in",
         default=config._INPUT_FILE,
         type=str,
-        help="select a file for processing",
-        dest="infile",
+        help=f"select input file from {config._DATA_PATH} dir",
+        dest="FILE",
     )
     summary_parser.add_argument(
         "-y",
@@ -270,65 +266,68 @@ if __name__ == "__main__":
         "-m",
         "--mute",
         action="store_false",
-        help="suppress warranty message",
+        help="suppress disclaimer message",
     )
     summary_parser.set_defaults(func=summary)
 
-    calculate_parser = subparsers.add_parser(
-        "calculate",
+    report_parser = subparsers.add_parser(
+        "report",
         aliases=["get"],
-        help="make tax-related calculations",
+        help="generate tax-related report",
     )
-    calculate_parser.add_argument(
+    report_parser.add_argument(
         "mode",
         choices=["pnl", "taxes"],
-        help="choose calculation",
+        help="choose report type",
     )
-    calculate_parser.add_argument(
-        "-f",
-        "--file",
+    report_parser.add_argument(
+        "-i",
+        "--in",
         default=config._INPUT_FILE,
         type=str,
-        help="select a file for processing",
-        dest="infile",
+        help=f"select a file from {config._DATA_PATH} dir",
+        dest="FILE",
     )
-    calculate_parser.add_argument(
+    report_parser.add_argument(
         "-y",
         "--year",
         default=None,
         type=int,
-        help="calculate tax liability for the provided year",
+        help="select a year from input file",
     )
-    calculate_parser.add_argument(
+    report_parser.add_argument(
+        "-d",
+        default=config._DEDUCTIBLE,
+        type=float,
+        help=f"set tax-deductible percentage (default: {config._DEDUCTIBLE})",
+        dest="deductible",
+    )
+    report_parser.add_argument(
         "-c",
         "--ccy",
         action="store_false",
-        help="show price in the asset-priced currency",
+        help="show results in asset-priced currency",
     )
-    calculate_parser.add_argument(
-        "-d",
-        "--deductible",
-        default=config._DEDUCTIBLE,
-        type=float,
-        help="select a percentage of deductible amount of loss",
-    )
-    calculate_parser.add_argument(
+    report_parser.add_argument(
         "-m",
         "--mute",
         action="store_false",
-        help="suppress warranty message",
+        help="suppress disclaimer message",
     )
-    calculate_parser.set_defaults(func=calculate)
+    report_parser.set_defaults(func=report)
 
     args = parser.parse_args()
 
-    print()
+    if args.subcommand:
+        print()
 
-    args.func(args)
+        args.func(args)
 
-    if args.mute:
-        print(_WARRANTY)
+        if args.mute:
+            print(_DISCLAIMER)
+        else:
+            pass
     else:
-        pass
+        parser.print_help()
 
     print()
