@@ -8,7 +8,7 @@ class Config:
     _INPUT_FILE: str = "transactions-example1.json"
     _BASIC: str = "BACIS"
     _COMPLETE: str = "COMPLETE"
-    _ASSET: str  = "Asset"
+    _ASSET: str = "Asset"
     _ASSET_CURRENCY: str = "AssetPriceCurrency"
     _CURRENCY: str = "Currency"
     _TRANSACTIONS: str = "Transactions"

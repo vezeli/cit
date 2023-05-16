@@ -16,10 +16,11 @@ from formatting import format_DF
 
 _PROGRAM_NAME = "cit"
 
-_DESCRIPTION = "CIT is a minimalistic Capital Income Tax calculator for cryptocurrencies."
+_DESCRIPTION = (
+    "CIT is a minimalistic Capital Income Tax calculator for cryptocurrencies."
+)
 
-_WARRANTY = (
-"""
+_WARRANTY = """
 +---------------------------------------------------+
 | NOTE:                                             |
 | This program is not a substitute for professional |
@@ -28,30 +29,21 @@ _WARRANTY = (
 | accountant and/or professional for comprehensive  |
 | and correct tax advice and calculation.           |
 +---------------------------------------------------+"""
-)
+
 
 def list_transactions(args):
     global _WARRANTY, config
-    
+
     config._INPUT_FILE = args.infile
 
-    df: DataFrame = (
-        read_in_transactions(config)
-        .round(
-            {
-                config._AMOUNT: 6,
-                config._PRICE: 2,
-                config._FX_RATE: 2
-            }
-        )
+    df: DataFrame = read_in_transactions(config).round(
+        {config._AMOUNT: 6, config._PRICE: 2, config._FX_RATE: 2}
     )
 
     if args.ccy:
-        df = (
-            df
-            .assign(DomesticMV=lambda x: x[config._PRICE] * x[config._FX_RATE])
-            .round({"DomesticMV": 2})
-        )
+        df = df.assign(
+            DomesticMV=lambda x: x[config._PRICE] * x[config._FX_RATE]
+        ).round({"DomesticMV": 2})
     else:
         pass
 
@@ -90,20 +82,14 @@ def list_transactions(args):
         )
     )
 
+
 def summary(args):
     global _WARRANTY, config
 
     config._INPUT_FILE = args.infile
 
-    df: DataFrame = (
-        read_in_transactions(config)
-        .round(
-            {
-                config._AMOUNT: 6,
-                config._PRICE: 2,
-                config._FX_RATE: 2
-            }
-        )
+    df: DataFrame = read_in_transactions(config).round(
+        {config._AMOUNT: 6, config._PRICE: 2, config._FX_RATE: 2}
     )
 
     if args.year:
@@ -144,15 +130,8 @@ def calculate(args):
     config._INPUT_FILE = args.infile
     config._DEDUCTIBLE = args.deductible
 
-    df: DataFrame = (
-        read_in_transactions(config)
-        .round(
-            {
-                config._AMOUNT: 6,
-                config._PRICE: 2,
-                config._FX_RATE: 2
-            }
-        )
+    df: DataFrame = read_in_transactions(config).round(
+        {config._AMOUNT: 6, config._PRICE: 2, config._FX_RATE: 2}
     )
 
     if args.year:
@@ -205,14 +184,13 @@ def calculate(args):
 
 
 if __name__ == "__main__":
-
     config = Config()
 
     parser = argparse.ArgumentParser(
         prog=_PROGRAM_NAME,
         description=_DESCRIPTION,
         epilog=_WARRANTY,
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     subparsers = parser.add_subparsers(
@@ -234,7 +212,8 @@ if __name__ == "__main__":
         help="choose transaction type",
     )
     list_parser.add_argument(
-        "-f", "--file",
+        "-f",
+        "--file",
         default=config._INPUT_FILE,
         type=str,
         help="select a file for processing",
@@ -267,7 +246,8 @@ if __name__ == "__main__":
         help="aggregate transactions into current holding",
     )
     summary_parser.add_argument(
-        "-f", "--file",
+        "-f",
+        "--file",
         default=config._INPUT_FILE,
         type=str,
         help="select a file for processing",

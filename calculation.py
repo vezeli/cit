@@ -13,9 +13,8 @@ def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:
     def _calculate_cost(df: DataFrame, c: Config) -> DataFrame:
         nonlocal _COST
         df = (
-            df
-            .copy()
-            .assign(Cost = lambda x: (-1 * np.sign(x[c._AMOUNT])) * x[c._PRICE])
+            df.copy()
+            .assign(Cost=lambda x: (-1 * np.sign(x[c._AMOUNT])) * x[c._PRICE])
             .rename(columns={"Cost": _COST})
         )
         return df
@@ -40,16 +39,18 @@ def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:
                 acquisition_price = cost
                 acquisition_amount = 0 + amount
             else:
-                acquisition_amount = (previous_acquisition_amount := acquisition_amount) + amount
+                acquisition_amount = (
+                    previous_acquisition_amount := acquisition_amount
+                ) + amount
                 # When selling `acquisition_price` doesn't change but the amount
                 # held (i.e., `acquisition_amount`) changes:
                 if _is_sell(cost):
                     acquisition_price: R = acquisition_price
                 # When buying both `acquisition_price` and `acquisition_amount` are affected:
-                else: 
+                else:
                     acquisition_price: R = np.average(
                         [acquisition_price, cost],
-                        weights=[previous_acquisition_amount, amount]
+                        weights=[previous_acquisition_amount, amount],
                     )
 
             acquisition_prices.append(acquisition_price)
@@ -58,11 +59,8 @@ def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:
 
     acquisition_prices: list[R] = df.pipe(_calculate_acquisition_prices, c=c)
     return concat(
-        [
-            df,
-            Series(acquisition_prices, index=df.index, name=c._ACQUISITION_PRICE)
-        ],
-        axis=1
+        [df, Series(acquisition_prices, index=df.index, name=c._ACQUISITION_PRICE)],
+        axis=1,
     )
 
 
@@ -71,19 +69,15 @@ def calculate_statistics(
     df: DataFrame,
     c: Config,
     ccy: bool,
-    ) -> DataFrame:
+) -> DataFrame:
     df_transactions = df.loc[df.index.year <= financial_year]
 
-    amount_bought: R = (
-        df_transactions
-        .loc[df_transactions[c._AMOUNT] > 0, c._AMOUNT]
-        .sum()
-    )
-    amount_sold: R = (
-        df_transactions
-        .loc[df_transactions[c._AMOUNT] < 0, c._AMOUNT]
-        .sum()
-    )
+    amount_bought: R = df_transactions.loc[
+        df_transactions[c._AMOUNT] > 0, c._AMOUNT
+    ].sum()
+    amount_sold: R = df_transactions.loc[
+        df_transactions[c._AMOUNT] < 0, c._AMOUNT
+    ].sum()
     amount_remaining: R = amount_bought + amount_sold
 
     df_ = calculate_acquisition_prices(df, c=c)
@@ -135,12 +129,12 @@ def _calculate_PNL(df: DataFrame, c: Config, ccy: bool) -> DataFrame:
         df[c._FX_RATE] = 1
 
     df = (
-        df
-        .copy()
+        df.copy()
         .query(f"{c._AMOUNT} < 0")
         .assign(
-            PNL = lambda x:
-                (-1 * x[c._AMOUNT]) * x[c._FX_RATE] * (x[c._PRICE] - x[c._ACQUISITION_PRICE])
+            PNL=lambda x: (-1 * x[c._AMOUNT])
+            * x[c._FX_RATE]
+            * (x[c._PRICE] - x[c._ACQUISITION_PRICE])
         )
         .rename(columns={"PNL": c._PNL})
     )
@@ -149,8 +143,7 @@ def _calculate_PNL(df: DataFrame, c: Config, ccy: bool) -> DataFrame:
 
 def calculate_PNL(df: DataFrame, c: Config, ccy: bool) -> DataFrame:
     df = (
-        df
-        .copy()
+        df.copy()
         .pipe(calculate_acquisition_prices, c=c)
         .pipe(_calculate_PNL, c=c, ccy=ccy)
     )
@@ -158,11 +151,8 @@ def calculate_PNL(df: DataFrame, c: Config, ccy: bool) -> DataFrame:
 
 
 def calculate_PNL_per_year(
-    financial_year: N,
-    df: DataFrame,
-    c: Config,
-    ccy: bool
-    ) -> DataFrame:
+    financial_year: N, df: DataFrame, c: Config, ccy: bool
+) -> DataFrame:
     df = calculate_PNL(df=df, c=c, ccy=ccy)
     df = df.loc[df.index.year == financial_year]
     df.index = df.index.date
@@ -174,18 +164,14 @@ def calculate_skatteverket(
     df: DataFrame,
     c: Config,
     ccy: bool,
-    ) -> DataFrame:
+) -> DataFrame:
     df_transactions = df.loc[df.index.year == financial_year]
-    bought_amount: R = (
-        df_transactions
-        .loc[df_transactions[c._AMOUNT] > 0, c._AMOUNT]
-        .sum()
-    )
-    sold_amount: R = (
-        df_transactions
-        .loc[df_transactions[c._AMOUNT] < 0, c._AMOUNT]
-        .sum()
-    )
+    bought_amount: R = df_transactions.loc[
+        df_transactions[c._AMOUNT] > 0, c._AMOUNT
+    ].sum()
+    sold_amount: R = df_transactions.loc[
+        df_transactions[c._AMOUNT] < 0, c._AMOUNT
+    ].sum()
 
     df_pnl = calculate_PNL(df=df, c=c, ccy=ccy)
     df_pnl = df_pnl.loc[df_pnl.index.year == financial_year]
@@ -197,49 +183,35 @@ def calculate_skatteverket(
         df_pnl.loc[:, c._FX_RATE] = 1
 
     recieved = (
-        df_transactions
-        .loc[df_transactions[c._AMOUNT] < 0]
-        .assign(Received = lambda x:
-            (-1 * x[c._AMOUNT]) * x[c._PRICE] * x[c._FX_RATE]
-        )
-        .Received
-        .sum()
+        df_transactions.loc[df_transactions[c._AMOUNT] < 0]
+        .assign(Received=lambda x: (-1 * x[c._AMOUNT]) * x[c._PRICE] * x[c._FX_RATE])
+        .Received.sum()
     )
 
-    payed = (
-        df_pnl
-        .assign(Payed = lambda x:
-            x[c._AMOUNT] * x[c._ACQUISITION_PRICE] * x[c._FX_RATE]
-        )
-        .Payed
-        .sum()
-    )
+    payed = df_pnl.assign(
+        Payed=lambda x: x[c._AMOUNT] * x[c._ACQUISITION_PRICE] * x[c._FX_RATE]
+    ).Payed.sum()
 
-    df_pnl[c._TAXABLE] = (
-        df_pnl
-        .loc[:, c._PNL]
-        .apply(lambda pnl: pnl if pnl > 0 else c._DEDUCTIBLE * pnl)
+    df_pnl[c._TAXABLE] = df_pnl.loc[:, c._PNL].apply(
+        lambda pnl: pnl if pnl > 0 else c._DEDUCTIBLE * pnl
     )
     taxable = df_pnl[c._TAXABLE].sum()
 
-    df_rv = (
-        DataFrame(
-            {
-                "Amount bought": [bought_amount],
-                "Amount sold": [sold_amount],
-                "Received": [recieved],
-                "Payed": [payed],
-                "Taxable": [taxable],
-            }
-        )
-        .round(
-            {
-                "Amount bought": 6,
-                "Amount sold": 6,
-                "Received": 2,
-                "Payed": 2,
-                "Taxable": 2,
-            }
-        )
+    df_rv = DataFrame(
+        {
+            "Amount bought": [bought_amount],
+            "Amount sold": [sold_amount],
+            "Received": [recieved],
+            "Payed": [payed],
+            "Taxable": [taxable],
+        }
+    ).round(
+        {
+            "Amount bought": 6,
+            "Amount sold": 6,
+            "Received": 2,
+            "Payed": 2,
+            "Taxable": 2,
+        }
     )
     return df_rv
