@@ -1,3 +1,6 @@
+[![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 # CIT
 
 CIT is a command-line interface designed to calculate the tax liability
@@ -9,9 +12,7 @@ CIT is a double-nested recursive acronym that stands for **CIT's Income Tax**
 with the first CIT represents *Crypto Income Tax* and is also an acronym from
 the term capital income tax.
 
-## Installation and Documentation
-
-### Installation
+## Installation
 
 To set up CIT, the user clones the project locally by running the command `git
 clone https://github.com/vezeli/cit.git`. The program does not require
@@ -22,6 +23,8 @@ CIT is tested with Python 3.10 or later versions and has dependencies on
 third-party packages. To install the necessary dependencies, navigate to the
 project's root directory within a terminal and execute the command `python -m
 pip install -r requirements.txt`.
+
+## Documentation
 
 ### Usage
 
@@ -126,10 +129,7 @@ the same approach can be applied to process other input files as well.
 
 * For listing only the buy transactions made in 2021:
 
-``$ python cit.py transactions --year 2021 buy``
-
-  Note that it is possible to omit the name of the files because
-  `skatteverket-example-1.json` is default input file in `_config.py`:
+``$ python cit.py transactions --in "skatteverket-example-1.json" --year 2021 buy``
 
 * To aggregate the transaction data and summarize trade statistics for the year
   2022, use the `summary` subcommand:
