@@ -18,19 +18,8 @@ _DESCRIPTION = (
     "CIT is a minimalistic Capital Income Tax calculator for cryptocurrencies."
 )
 
-_DISCLAIMER = """
-+---------------------------------------------------+
-| NOTE:                                             |
-| This program is not a substitute for professional |
-| accounting advice and should not be used as such. |
-| You should always seek the guidance of a tax      |
-| accountant and/or professional for comprehensive  |
-| and correct tax advice and calculation.           |
-+---------------------------------------------------+"""
-
-
 def list_transactions(args):
-    global _DISCLAIMER, config
+    global config
 
     config._INPUT_FILE = args.FILE
 
@@ -82,7 +71,7 @@ def list_transactions(args):
 
 
 def summary(args):
-    global _DISCLAIMER, config
+    global config
 
     config._INPUT_FILE = args.FILE
 
@@ -123,7 +112,7 @@ def summary(args):
 
 
 def report(args):
-    global _DISCLAIMER, config
+    global config
 
     config._INPUT_FILE = args.FILE
     config._DEDUCTIBLE = args.deductible
@@ -228,12 +217,6 @@ if __name__ == "__main__":
         action="store_true",
         help="show price in domestic currency",
     )
-    list_parser.add_argument(
-        "-m",
-        "--mute",
-        action="store_false",
-        help="suppress disclaimer message",
-    )
     list_parser.set_defaults(func=list_transactions)
 
     summary_parser = subparsers.add_parser(
@@ -261,12 +244,6 @@ if __name__ == "__main__":
         "--ccy",
         action="store_true",
         help="show price in domestic currency",
-    )
-    summary_parser.add_argument(
-        "-m",
-        "--mute",
-        action="store_false",
-        help="suppress disclaimer message",
     )
     summary_parser.set_defaults(func=summary)
 
@@ -308,12 +285,6 @@ if __name__ == "__main__":
         action="store_false",
         help="show results in asset-priced currency",
     )
-    report_parser.add_argument(
-        "-m",
-        "--mute",
-        action="store_false",
-        help="suppress disclaimer message",
-    )
     report_parser.set_defaults(func=report)
 
     args = parser.parse_args()
@@ -322,11 +293,6 @@ if __name__ == "__main__":
         print()
 
         args.func(args)
-
-        if args.mute:
-            print(_DISCLAIMER)
-        else:
-            pass
     else:
         parser.print_help()
 

@@ -2,14 +2,14 @@
 
 CIT is a command-line interface designed to calculate the tax liability
 associated with capital income tax on the buying, selling, and spending of
-cryptocurrencies, adhering to the rules and regulations set forth by the
+cryptocurrencies, following to the rules and regulations set forth by the
 Swedish Tax Agency (Swe., Skatteverket).
 
 CIT is a double-nested recursive acronym that stands for **CIT's Income Tax**
-where the first CIT represents *Crypto Income Tax* and is also an acronym from
+with the first CIT represents *Crypto Income Tax* and is also an acronym from
 the term capital income tax.
 
-## Installation and documentation
+## Installation and Documentation
 
 ### Installation
 
@@ -18,10 +18,10 @@ clone https://github.com/vezeli/cit.git`. The program does not require
 installation since the command-line interface (CLI) can be executed directly
 from a script.
 
-CIT is tested with Python 3.10 and newer versions and has dependencies on
+CIT is tested with Python 3.10 or later versions and has dependencies on
 third-party packages. To install the necessary dependencies, navigate to the
-project's root directory in a terminal and run the command `python -m pip
-install -r requirements.txt`.
+project's root directory within a terminal and execute the command `python -m
+pip install -r requirements.txt`.
 
 ### Usage
 
@@ -46,21 +46,21 @@ file name within the `./data` directory.
 
 ### Modes
 
-CIT operates in two mode:
+CIT operates in two modes:
 
-1. When the user provides both transaction details and market prices in a JSON
-   file, CIT processes the transaction data based on the provided information.
+1. When the user provides market prices and exchange rates in a JSON file, CIT
+   processes the transaction data with the provided information.
 
 2. If the market prices are not included in the JSON file, CIT automatically
    retrieves the prices from Yahoo Finance. It then proceeds to process the
    transaction data using the fetched market prices, just as it would if the
-   prices were provided in the file.
+   prices were provided in the JSON file.
 
-#### Input files
+### Input Files
 
-To use CIT with a JSON file, the file must adhere to the configuration format
-specified in `_config.py`. By default, the following information needs to be
-provided in the JSON file:
+To read transaction data from a JSON file, the file needs to comply with the
+configuration format specified in `_config.py`. By default, the following
+information needs to be provided in the JSON file:
 
 - `Asset`: A string representing the ticker symbol for the currency pair from
   Yahoo Finance (e.g., BTC-USD, DOGE-USD).
@@ -83,18 +83,80 @@ Each dictionary within `Transactions` should include the following information:
   bought, sold, or spent. Positive values indicate buying, and negative values
   indicate selling or spending.
 
-- `market price`: A numeric value representing the price *per crypto unit* in
-  `AssetPriceCurrency` at the time of the transaction.
+- `market price`: A positive numeric value representing the price *per crypto
+  unit* in `AssetPriceCurrency` at the time of the transaction.
 
-- `exchange rate`: A numeric value representing the exchange rate between
-  `AssetPriceCurrency` and `Currency` at the time of the transaction.
+- `exchange rate`: A positive numeric value representing the exchange rate
+  between `AssetPriceCurrency` and `Currency` at the time of the transaction.
   `AssetPriceCurrency` is considered the base currency, and `Currency` is the
   price currency.
 
 When the `market price` and `exchange rate` keys are omitted in the
 `Transactions` dictionary, CIT operates in the download mode. In this mode, it
 fetches the so-called mid prices from Yahoo Finance, which are calculated as
-the average of the open and close prices for that day.
+the average of the opening and closing prices for that day.
+
+## Skatteverket's Examples
+
+Skatteverket offers hypothetical examples of transaction histories, accompanied
+by a step-by-step guide that demonstrates how to utilize transaction data for
+calculating tax liabilities.
+
+The following examples are found on [Skatteverket's
+website](https://skatteverket.se/privat/skatter/vardepapper/andratillgangar/kryptovalutor.4.15532c7b1442f256bae11b60.html):
+
+1. Köp och försäljning av kryptovaluta
+2. Köp, försäljning, köp av varor
+
+To replicate these examples, two JSON files,
+`./data/skatteverket-example-1.json` and `./data/skatteverket-example-2.json`,
+have been created using the provided data which are included as part of the
+project.
+
+### Hands On Examples
+
+In this subsection we provide guidance on processing transaction data using the
+file `./data/skatteverket-example-1.json` as an illustrative example. However,
+the same approach can be applied to process other input files as well.
+
+* For listing all transactions, use the `transactions` subcommand with
+  positional argument `all` and optional argument `--in`:
+
+``$ python cit.py transactions --in "skatteverket-example-1.json" all``
+
+* For listing only the buy transactions made in 2021:
+
+``$ python cit.py transactions --year 2021 buy``
+
+  Note that it is possible to omit the name of the files because
+  `skatteverket-example-1.json` is default input file in `_config.py`:
+
+* To aggregate the transaction data and summarize trade statistics for the year
+  2022, use the `summary` subcommand:
+
+``$ python cit.py summary --in "skatteverket-example-1.json" --year 2022``
+
+* When making a sell transaction, you can calculate the profit and loss (P&L)
+  using the `report` subcommand with the `pnl` positional argument:
+
+``$ python cit.py report --in "skatteverket-example-1.json" --year 2022 pnl``
+
+* For calculating the tax liability from the P&L, use the `report` subcommand
+  with the `taxes` positional argument:
+
+``$ python cit.py report --in "skatteverket-example-1.json" --year 2022 taxes``
+
+Additionally, you can use the `--ccy` optional flag to control the currency in
+which CIT provides results. However, for the current examples, this flag is not
+relevant because the market prices are provided in the same currency in which
+the tax is declared.
+
+To make the commands less verbose use subcommand aliases `ls`, `agg` and `get`.
+
+Finally, it is recommend to go through examples step by step and compare CIT's
+outputs with the calculations from Skatteverket. This will greatly improve your
+understanding of how CIT operates behind the scenes and how you can efficiently
+utilize it.
 
 ## Disclaimer
 
