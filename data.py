@@ -10,9 +10,13 @@ from _config import Config
 
 
 def read_json(filename: str) -> dict:
-    with open(filename, "r") as fhandle:
-        d = json.load(fhandle)
-    return d
+    try:
+        with open(filename, "r") as fhandle:
+            d = json.load(fhandle)
+        return d
+    except FileNotFoundError:
+        print(f'ImportError: Input file "{filename}" doesn\'t exist')
+        raise SystemExit(1)
 
 
 def check_transaction_data_type(transactions: list[dict], c: Config) -> str:
@@ -23,22 +27,15 @@ def check_transaction_data_type(transactions: list[dict], c: Config) -> str:
     elif {c._DATE, c._AMOUNT, c._PRICE, c._FX_RATE}.issuperset(df):
         rv = c._COMPLETE
     else:
-        raise ValueError(
-            textwrap.dedent(
-                """
-            Unable to import transaction data.
-
-            Make sure that the column names in _config.py:
-
-            - `Config._DATE`
-            - `Config._AMOUNT`
-            - `Config._PRICE`
-            - `Config._FX_RATE`
-
-            are the same as the field names in the input file.
+        msg = textwrap.dedent(
             """
-            )
+            Unknown format of transaction data
+
+            See examples of JSON input files in ./data or reconfigure
+            ./_config.py."""
         )
+        print(msg)
+        raise SystemExit(1)
 
     return rv
 
