@@ -1,5 +1,5 @@
 {
-	"_comment": "JSON `Transactions` without config._PRICE and config._FX_RATE data.",
+	"_comment": "Basic JSON input file, i.e., `Transactions` are without config._PRICE and config._FX_RATE data.",
 	"Asset": "BTC-USD",
 	"AssetPriceCurrency": "USD",
 	"Currency": "SEK",

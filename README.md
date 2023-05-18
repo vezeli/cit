@@ -41,11 +41,12 @@ which provides three subcommands with their positional and optional arguments:
 * ``$ python cit.py report --help`` - process transactions and creates a report
   (alias `get`)
 
-The program, by default, reads JSON files from the `./data` directory that
-contain transaction data. If no CLI argument is provided to specify the input
-file name, the program will read from `./data/skatteverket-example-1.json`. An
-optional argument `-i` or `--in` is available for the user to specify the input
-file name within the `./data` directory.
+The program, by default, reads JSON files from the `./input_data` directory
+that contain transaction data. If no CLI argument is provided to specify the
+input file name, the program will read from
+`./input_data/skatteverket-example-1.json`. An optional argument `-i` or `--in`
+is available for the user to specify the input file name within the
+`./input_data` directory.
 
 ### Modes
 
@@ -112,39 +113,39 @@ website](https://skatteverket.se/privat/skatter/vardepapper/andratillgangar/kryp
 2. Köp, försäljning, köp av varor
 
 To replicate these examples, two JSON files,
-`./data/skatteverket-example-1.json` and `./data/skatteverket-example-2.json`,
-have been created using the provided data which are included as part of the
-project.
+`./input_data/skatteverket-example-1.json` and
+`./input_data/skatteverket-example-2.json`, have been created using the
+provided data which are included as part of the project.
 
 ### Hands On Examples
 
 In this subsection we provide guidance on processing transaction data using the
-file `./data/skatteverket-example-1.json` as an illustrative example. However,
-the same approach can be applied to process other input files as well.
+file `./input_data/skatteverket-example-1.json` as an illustrative example.
+However, the same approach can be applied to process other input files as well.
 
 * For listing all transactions, use the `transactions` subcommand with
   positional argument `all` and optional argument `--in`:
 
-``$ python cit.py transactions --in "skatteverket-example-1.json" all``
+``$ python cit.py transactions all --in skatteverket-example-1.json``
 
 * For listing only the buy transactions made in 2021:
 
-``$ python cit.py transactions --in "skatteverket-example-1.json" --year 2021 buy``
+``$ python cit.py transactions buy --in skatteverket-example-1.json --year 2021``
 
 * To aggregate the transaction data and summarize trade statistics for the year
   2022, use the `summary` subcommand:
 
-``$ python cit.py summary --in "skatteverket-example-1.json" --year 2022``
+``$ python cit.py summary --in skatteverket-example-1.json --year 2022``
 
 * When making a sell transaction, you can calculate the profit and loss (P&L)
   using the `report` subcommand with the `pnl` positional argument:
 
-``$ python cit.py report --in "skatteverket-example-1.json" --year 2022 pnl``
+``$ python cit.py report pnl --in skatteverket-example-1.json --year 2022``
 
 * For calculating the tax liability from the P&L, use the `report` subcommand
-  with the `taxes` positional argument:
+  with the `taxes` positional argument in domestic currency:
 
-``$ python cit.py report --in "skatteverket-example-1.json" --year 2022 taxes``
+``$ python cit.py report taxes --in skatteverket-example-1.json --year 2022 --ccy``
 
 Additionally, you can use the `--ccy` optional flag to control the currency in
 which CIT provides results. However, for the current examples, this flag is not
@@ -174,14 +175,3 @@ relevant [GitHub issue](https://github.com/ranaroussi/yfinance/issues/963).
 This program is not a substitute for professional accounting advice and should
 not be used as such. You should always seek the guidance of a tax accountant
 and/or professional for comprehensive and correct tax advice and calculation.
-
-## Warranty
-
-Because the program is licensed free of charge, there is no warranty for the
-program, to the extent permitted by applicable law. Except when otherwise
-stated in writing the copyright holders and/or other parties provide the
-program "as is" without warranty of any kind, either expressed or implied,
-including, but not limited to, the implied warranties of merchantability and
-fitness for a particular purpose. The entire risk as to the quality and
-performance of the program is with you. Should the program prove defective, you
-assume the cost of all necessary servicing, repair or correction.

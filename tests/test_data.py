@@ -28,7 +28,7 @@ def configuration():
 
 def test_read_json_with_config(configuration):
     c = configuration
-    c._INPUT_FILE = "skatteverket-example-1.json"
+    c._INPUT_FILE = "test-1.json"
 
     d = read_json_with_config(c)
     asset = d[c._ASSET]
@@ -81,9 +81,9 @@ def test_read_data_with_config_system_exit(configuration):
 @pytest.mark.parametrize(
     "filename, mode",
     [
-        ("skatteverket-example-1.json", "_COMPLETE"),
-        ("skatteverket-example-2.json", "_COMPLETE"),
-        ("mode-2.json", "_BASIC"),
+        ("test-1.json", "_COMPLETE"),
+        ("test-2.json", "_COMPLETE"),
+        ("test-3.json", "_BASIC"),
     ],
 )
 def test_check_transaction_data_type(filename, mode, configuration):
@@ -101,8 +101,8 @@ def test_check_transaction_data_type(filename, mode, configuration):
 @pytest.mark.parametrize(
     "filename",
     [
-        "incorrect-transactions.json",
-        "reconfig-transactions.json",
+        "test-4.json",
+        "test-5.json",
     ],
 )
 def test_check_transaction_data_type_system_exit(filename, configuration):
@@ -154,7 +154,7 @@ def test_ffill_mid():
 
 def test_read_in_transactions_basic(configuration):
     c = configuration
-    c._INPUT_FILE = "mode-2.json"
+    c._INPUT_FILE = "test-3.json"
 
     df_test_value = read_in_transactions(c)
     df_assert_value = DataFrame(
@@ -183,7 +183,7 @@ def test_read_in_transactions_basic(configuration):
 
 def test_read_in_transactions_complete(configuration):
     c = configuration
-    c._INPUT_FILE = "skatteverket-example-1.json"
+    c._INPUT_FILE = "test-1.json"
 
     df_test_value = read_in_transactions(c)
     df_assert_value = DataFrame(
@@ -212,7 +212,6 @@ def test_read_in_transactions_complete(configuration):
 
 def test_complement_basic_data(configuration):
     c = configuration
-    c._INPUT_FILE = "mode-2.json"
 
     asset = "BTC-USD"
     currency = "SEK"

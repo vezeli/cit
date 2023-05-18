@@ -1,5 +1,5 @@
 {
-	"_comment": "Exempel – Köp och försäljning av kryptovaluta",
+	"_comment": "Complete JSON input file for BTC price in SEK",
 	"Asset": "BTC-SEK",
 	"AssetPriceCurrency": "SEK",
 	"Currency": "SEK",

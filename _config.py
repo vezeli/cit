@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
-    _DATA_PATH: str = "./data"
+    _DATA_PATH: str = "./input_data"
     _INPUT_FILE: str = "skatteverket-example-1.json"
     _BASIC: str = "BACIS"
     _COMPLETE: str = "COMPLETE"

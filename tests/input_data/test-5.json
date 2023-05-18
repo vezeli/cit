@@ -1,5 +1,5 @@
 {
-	"_comment": "Exempel – Köp och försäljning av kryptovaluta",
+	"_comment": "This can be a valid JSON input file and requires reconfiguration of _config.py. Until _config.py is recunfigured this JSON is invalid.",
 	"Asset": "BTC-SEK",
 	"AssetPriceCurrency": "SEK",
 	"Currency": "SEK",
