@@ -158,6 +158,17 @@ outputs with the calculations from Skatteverket. This will greatly improve your
 understanding of how CIT operates behind the scenes and how you can efficiently
 utilize it.
 
+## Known Issues
+
+When using the `yfinance` library to fetch market data from Yahoo Finance, you
+may encounter an issue if your application is running behind a proxy. This
+issue can manifest as an `SSLCertVerificationError`. To resolve this problem on
+Windows, you can try installing the python-certifi-win32 library by executing
+the command `pip install python-certifi-win32`.
+
+For further details and discussions regarding this issue, you can refer to the
+relevant [GitHub issue](https://github.com/ranaroussi/yfinance/issues/963).
+
 ## Disclaimer
 
 This program is not a substitute for professional accounting advice and should
