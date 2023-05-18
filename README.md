@@ -63,7 +63,7 @@ CIT operates in two modes:
 ### Input Files
 
 To read transaction data from a JSON file, the file needs to comply with the
-configuration format specified in `_config.py`. By default, the following
+configuration format specified in `config.py`. By default, the following
 information needs to be provided in the JSON file:
 
 - `Asset`: A string representing the ticker symbol for the currency pair from

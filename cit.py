@@ -3,14 +3,14 @@ from numbers import Real as R
 
 from pandas import DataFrame
 
-from _config import Config
-from calculation import (
+from src.cit.accounting import (
     calculate_PNL_per_year,
     calculate_skatteverket,
     calculate_statistics,
 )
-from data import read_json_with_config, read_in_transactions
-from formatting import format_DF
+from src.cit.config import Config
+from src.cit.data import read_json_with_config, read_in_transactions
+from src.cit.formatting import format_DF
 
 _PROGRAM_NAME = "cit"
 

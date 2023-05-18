@@ -4,7 +4,7 @@ from numbers import Real as R
 import numpy as np
 from pandas import concat, DataFrame, Series
 
-from _config import Config
+from src.cit.config import Config
 
 
 def calculate_acquisition_prices(df: DataFrame, c: Config) -> DataFrame:

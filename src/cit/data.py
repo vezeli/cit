@@ -6,7 +6,7 @@ import textwrap
 from pandas import DataFrame
 import yfinance as yf
 
-from _config import Config
+from src.cit.config import Config
 
 
 def read_json(filename: str) -> dict:

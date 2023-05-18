@@ -10,8 +10,8 @@ root_path = Path(__file__).resolve().parent.parent
 # Add the root directory to the Python module search path
 sys.path.insert(0, str(root_path))
 
-from _config import Config
-from data import (
+from src.cit.config import Config
+from src.cit.data import (
     check_transaction_data_type,
     complement_basic_data,
     ffill_mid,
@@ -20,6 +20,7 @@ from data import (
 )
 
 
+# Default CIT configuration
 @pytest.fixture
 def configuration():
     config = Config()
