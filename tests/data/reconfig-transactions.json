@@ -1,0 +1,11 @@
+{
+	"_comment": "Exempel – Köp och försäljning av kryptovaluta",
+	"Asset": "BTC-SEK",
+	"AssetPriceCurrency": "SEK",
+	"Currency": "SEK",
+	"Transactions": [
+		{"t": "2021-10-12", "quantity":  0.5, "PX_LAST":  40000.0000, "FX_RATE": 1},
+		{"t": "2021-11-12", "quantity":  0.2, "PX_LAST":  50000.0000, "FX_RATE": 1},
+		{"t": "2022-11-16", "quantity": -0.4, "PX_LAST": 100000.0000, "FX_RATE": 1}
+	]
+}

@@ -72,15 +72,18 @@ def read_in_transactions(c: Config) -> DataFrame:
     return df
 
 
-def download(ticker: str, start_date: datetime, end_date: datetime) -> DataFrame:
-    df = yf.download(ticker, start=start_date, end=end_date, progress=False)
-
+def ffill_mid(df: DataFrame) -> DataFrame:
     df = (
         df.asfreq("D", method="ffill")
         .assign(Mid=lambda df: (df.Open + df.Close) / 2)
         .Mid.to_frame()
     )
+    return df
 
+
+def download(ticker: str, start_date: datetime, end_date: datetime) -> DataFrame:
+    df = yf.download(ticker, start=start_date, end=end_date, progress=False)
+    df = ffill_mid(df)
     return df
 
 

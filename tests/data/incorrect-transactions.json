@@ -1,0 +1,11 @@
+{
+	"_comment": "JSON `Transactions` dicts have incorrect format.",
+	"Asset": "BTC-SEK",
+	"AssetPriceCurrency": "SEK",
+	"Currency": "SEK",
+	"Transactions": [
+		{"foo": "2021-10-12", "amount":  0.5, "market price":  40000.0000, "exchange rate": 1},
+		{"date": "2021-11-12", "bar":  0.2, "market price":  50000.0000, "exchange rate": 1},
+		{"date": "2022-11-16", "amount": -0.4, "baz": 100000.0000, "exchange rate": 1}
+	]
+}
