@@ -11,10 +11,10 @@ root_path = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(root_path))
 
 from src.cit.config import Config
-from src.cit.data import (
+from src.cit.reading import (
     check_transaction_data_type,
     complement_basic_data,
-    ffill_mid,
+    compute_mid_prices,
     read_in_transactions,
     read_json_with_config,
 )
@@ -119,7 +119,7 @@ def test_check_transaction_data_type_system_exit(filename, configuration):
     assert e.value.code == 1
 
 
-def test_ffill_mid():
+def test_compute_mid_prices():
     df = (
         DataFrame(
             [
@@ -148,7 +148,7 @@ def test_ffill_mid():
     df_assert_value.index.name = "date"
     df_assert_value.index.freq = "D"
 
-    df_test_value = ffill_mid(df)
+    df_test_value = compute_mid_prices(df)
 
     assert_frame_equal(df_test_value, df_assert_value)
 

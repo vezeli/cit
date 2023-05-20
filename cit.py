@@ -9,8 +9,8 @@ from src.cit.accounting import (
     calculate_statistics,
 )
 from src.cit.config import Config
-from src.cit.data import read_json_with_config, read_in_transactions
 from src.cit.formatting import format_DF
+from src.cit.reading import read_json_with_config, read_in_transactions
 
 _PROGRAM_NAME = "cit"
 

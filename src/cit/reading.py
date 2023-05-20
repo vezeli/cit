@@ -45,26 +45,26 @@ def read_json_with_config(c: Config) -> dict:
     return read_json(dir_path / input_file)
 
 
-def read_in_transactions(c: Config) -> DataFrame:
-    d = read_json_with_config(c)
-
-    asset = d[c._ASSET]
-    currency = d[c._CURRENCY]
-    _ = d[c._ASSET_CURRENCY]
-    transactions = d[c._TRANSACTIONS]
-
-    transaction_data_type = check_transaction_data_type(transactions, c)
-
-    df = (
+def _frame_transactions(transactions: dict, c: Config) -> DataFrame:
+    return (
         DataFrame(data=transactions)
         .astype({c._DATE: "datetime64[ns]"})
         .set_index(c._DATE)
         .sort_index()
     )
 
-    if transaction_data_type == c._BASIC:
-        df = complement_basic_data(d[c._ASSET], d[c._CURRENCY], df, c)
-    elif transaction_data_type == c._COMPLETE:
+
+def frame_transactions(d: dict, c: Config) -> DataFrame:
+    asset = d[c._ASSET]
+    currency = d[c._CURRENCY]
+    transactions = d[c._TRANSACTIONS]
+
+    df = _frame_transactions(transactions, c)
+
+    data_type = check_transaction_data_type(transactions, c)
+    if data_type == c._BASIC:
+        df = complement_basic_data(asset, currency, df, c)
+    elif data_type == c._COMPLETE:
         pass
     else:
         raise ValueError
@@ -72,7 +72,12 @@ def read_in_transactions(c: Config) -> DataFrame:
     return df
 
 
-def ffill_mid(df: DataFrame) -> DataFrame:
+def read_in_transactions(c: Config) -> DataFrame:
+    d = read_json_with_config(c)
+    return frame_transactions(d, c)
+
+
+def compute_mid_prices(df: DataFrame) -> DataFrame:
     df = (
         df.asfreq("D", method="ffill")
         .assign(Mid=lambda df: (df.Open + df.Close) / 2)
@@ -83,8 +88,7 @@ def ffill_mid(df: DataFrame) -> DataFrame:
 
 def download(ticker: str, start_date: datetime, end_date: datetime) -> DataFrame:
     df = yf.download(ticker, start=start_date, end=end_date, progress=False)
-    df = ffill_mid(df)
-    return df
+    return compute_mid_prices(df)
 
 
 def complement_basic_data(
