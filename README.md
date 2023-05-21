@@ -45,7 +45,7 @@ The program, by default, reads JSON files from the `./input_data` directory
 that contain transaction data. If no CLI argument is provided to specify the
 input file name, the program will read from
 `./input_data/skatteverket-example-1.json`. An optional argument `-i` or `--in`
-is available for the user to specify the input file name within the
+is available for the user to specify the input file/files name within the
 `./input_data` directory.
 
 ### Modes

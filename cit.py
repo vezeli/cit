@@ -10,7 +10,7 @@ from src.cit.accounting import (
 )
 from src.cit.config import Config
 from src.cit.formatting import format_DF
-from src.cit.reading import read_json_with_config, read_in_transactions
+from src.cit.io import read_json_with_config, read_in_transactions, read_input_files
 
 _PROGRAM_NAME = "cit"
 
@@ -18,14 +18,11 @@ _DESCRIPTION = (
     "CIT is a minimalistic Capital Income Tax calculator for cryptocurrencies."
 )
 
+
 def list_transactions(args):
     global config
 
-    config._INPUT_FILE = args.FILE
-
-    df: DataFrame = read_in_transactions(config).round(
-        {config._AMOUNT: 6, config._PRICE: 2, config._FX_RATE: 2}
-    )
+    df = read_input_files(args.FILES, config)
 
     if args.ccy:
         df = df.assign(
@@ -73,11 +70,7 @@ def list_transactions(args):
 def summary(args):
     global config
 
-    config._INPUT_FILE = args.FILE
-
-    df: DataFrame = read_in_transactions(config).round(
-        {config._AMOUNT: 6, config._PRICE: 2, config._FX_RATE: 2}
-    )
+    df = read_input_files(args.FILES, config)
 
     if args.year:
         year = args.year
@@ -114,12 +107,9 @@ def summary(args):
 def report(args):
     global config
 
-    config._INPUT_FILE = args.FILE
     config._DEDUCTIBLE = args.deductible
 
-    df: DataFrame = read_in_transactions(config).round(
-        {config._AMOUNT: 6, config._PRICE: 2, config._FX_RATE: 2}
-    )
+    df = read_input_files(args.FILES, config)
 
     if args.year:
         year = args.year
@@ -199,10 +189,11 @@ if __name__ == "__main__":
     list_parser.add_argument(
         "-i",
         "--in",
-        default=config._INPUT_FILE,
+        nargs="*",
+        default=[config._INPUT_FILE],
         type=str,
         help=f"select input file from {config._DATA_PATH} dir",
-        dest="FILE",
+        dest="FILES",
     )
     list_parser.add_argument(
         "-y",
@@ -227,10 +218,11 @@ if __name__ == "__main__":
     summary_parser.add_argument(
         "-i",
         "--in",
-        default=config._INPUT_FILE,
+        nargs="*",
+        default=[config._INPUT_FILE],
         type=str,
         help=f"select input file from {config._DATA_PATH} dir",
-        dest="FILE",
+        dest="FILES",
     )
     summary_parser.add_argument(
         "-y",
@@ -260,10 +252,11 @@ if __name__ == "__main__":
     report_parser.add_argument(
         "-i",
         "--in",
-        default=config._INPUT_FILE,
+        nargs="*",
+        default=[config._INPUT_FILE],
         type=str,
         help=f"select a file from {config._DATA_PATH} dir",
-        dest="FILE",
+        dest="FILES",
     )
     report_parser.add_argument(
         "-y",

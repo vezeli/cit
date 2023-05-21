@@ -11,11 +11,12 @@ root_path = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(root_path))
 
 from src.cit.config import Config
-from src.cit.reading import (
+from src.cit.io import (
     check_transaction_data_type,
     complement_basic_data,
     compute_mid_prices,
     read_in_transactions,
+    read_input_files,
     read_json_with_config,
 )
 
@@ -247,5 +248,17 @@ def test_complement_basic_data(configuration):
             },
         }
     )
+
+    assert_frame_equal(df_test_value, df_assert_value)
+
+
+def test_read_input_files(configuration):
+    c = configuration
+
+    input_files = ["test-6a.json", "test-6b.json"]
+    df_test_value = read_input_files(input_files, c)
+
+    c._INPUT_FILE = "test-2.json"
+    df_assert_value = read_in_transactions(c)
 
     assert_frame_equal(df_test_value, df_assert_value)

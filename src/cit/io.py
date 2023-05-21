@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import textwrap
 
-from pandas import DataFrame
+from pandas import DataFrame, concat
 import yfinance as yf
 
 from src.cit.config import Config
@@ -72,11 +72,6 @@ def frame_transactions(d: dict, c: Config) -> DataFrame:
     return df
 
 
-def read_in_transactions(c: Config) -> DataFrame:
-    d = read_json_with_config(c)
-    return frame_transactions(d, c)
-
-
 def compute_mid_prices(df: DataFrame) -> DataFrame:
     df = (
         df.asfreq("D", method="ffill")
@@ -121,3 +116,21 @@ def complement_basic_data(
     )
 
     return df_r
+
+
+def read_in_transactions(c: Config) -> DataFrame:
+    return frame_transactions(read_json_with_config(c), c)
+
+
+def read_input_files(input_files: list, c: Config) -> DataFrame:
+    dfs = []
+    for input_file in input_files:
+        c._INPUT_FILE = input_file
+
+        df: DataFrame = read_in_transactions(c).round(
+            {c._AMOUNT: 6, c._PRICE: 2, c._FX_RATE: 2}
+        )
+        dfs.append(df)
+
+    df = concat(dfs).sort_index()
+    return df
