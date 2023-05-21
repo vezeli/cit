@@ -2,7 +2,6 @@
 	"_comment": "test-6a.json and test-6b.json together replicate test-2.json",
 	"Asset": "BTC-SEK",
 	"AssetPriceCurrency": "SEK",
-	"Currency": "SEK",
 	"Transactions": [
 		{"date": "2022-04-15", "amount":   5.000, "market price": 5000.0000, "exchange rate": 1},
 		{"date": "2022-02-01", "amount": -15.000, "market price": 4000.0000, "exchange rate": 1},

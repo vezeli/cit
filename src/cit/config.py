@@ -10,7 +10,6 @@ class Config:
     _COMPLETE: str = "COMPLETE"
     _ASSET: str = "Asset"
     _ASSET_CURRENCY: str = "AssetPriceCurrency"
-    _CURRENCY: str = "Currency"
     _TRANSACTIONS: str = "Transactions"
     _DATE: str = "date"
     _AMOUNT: str = "amount"
@@ -20,3 +19,4 @@ class Config:
     _PNL: str = "P&L"
     _TAXABLE: str = "taxable"
     _DEDUCTIBLE: R = 0.7
+    _DOMESTIC_CURRENCY: str = "SEK"

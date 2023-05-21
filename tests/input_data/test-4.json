@@ -2,7 +2,6 @@
 	"_comment": "Incorrect JSON format because `Transactions` can have only columns defined in _config.py.",
 	"Asset": "BTC-USD",
 	"AssetPriceCurrency": "USD",
-	"Currency": "SEK",
 	"Transactions": [
 		{"foo": "2021-10-12", "amount":  0.5, "market price":  40000.0000, "exchange rate": 1},
 		{"date": "2022-11-16", "amount": -0.4, "baz": 100000.0000, "exchange rate": 1},

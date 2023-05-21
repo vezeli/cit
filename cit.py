@@ -49,7 +49,7 @@ def list_transactions(args):
 
     d = read_json_with_config(config)
     asset_currency = d[config._ASSET_CURRENCY]
-    domestic_currency = d[config._CURRENCY]
+    domestic_currency = config._DOMESTIC_CURRENCY
     column_map = {
         config._AMOUNT: config._AMOUNT.capitalize(),
         config._PRICE: f"{config._PRICE.capitalize()} ({asset_currency})",
@@ -88,7 +88,7 @@ def summary(args):
     if not args.ccy:
         currency = d[config._ASSET_CURRENCY]
     else:
-        currency = d[config._CURRENCY]
+        currency = config._DOMESTIC_CURRENCY
 
     column_map = {
         "Average buying price": f"Average buying price ({currency})",
@@ -118,7 +118,7 @@ def report(args):
 
     d = read_json_with_config(config)
     asset_currency = d[config._ASSET_CURRENCY]
-    domestic_currency = d[config._CURRENCY]
+    domestic_currency = config._DOMESTIC_CURRENCY
     if not args.ccy:
         currency = domestic_currency
         fx_ticker = f"{asset_currency}{domestic_currency}"
