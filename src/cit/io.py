@@ -55,8 +55,9 @@ def _frame_transactions(transactions: dict, c: Config) -> DataFrame:
 
 
 def frame_transactions(d: dict, c: Config) -> DataFrame:
+    currency = c._DOMESTIC_CURRENCY
+
     asset = d[c._ASSET]
-    currency = d[c._CURRENCY]
     transactions = d[c._TRANSACTIONS]
 
     df = _frame_transactions(transactions, c)

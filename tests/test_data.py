@@ -35,12 +35,10 @@ def test_read_json_with_config(configuration):
     d = read_json_with_config(c)
     asset = d[c._ASSET]
     asset_currency = d[c._ASSET_CURRENCY]
-    currency = d[c._CURRENCY]
     transactions = d[c._TRANSACTIONS]
 
     ASSET = "BTC-SEK"
     ASSET_CURRENCY = "SEK"
-    CURRENCY = "SEK"
     TRANSACTIONS = [
         {
             "date": "2021-10-12",
@@ -62,10 +60,9 @@ def test_read_json_with_config(configuration):
         },
     ]
 
-    assert (asset, asset_currency, currency, transactions) == (
+    assert (asset, asset_currency, transactions) == (
         ASSET,
         ASSET_CURRENCY,
-        CURRENCY,
         TRANSACTIONS,
     )
 

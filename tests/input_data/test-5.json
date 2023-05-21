@@ -2,7 +2,6 @@
 	"_comment": "This can be a valid JSON input file and requires reconfiguration of _config.py. Until _config.py is recunfigured this JSON is invalid.",
 	"Asset": "BTC-SEK",
 	"AssetPriceCurrency": "SEK",
-	"Currency": "SEK",
 	"Transactions": [
 		{"t": "2021-10-12", "quantity":  0.5, "PX_LAST":  40000.0000, "FX_RATE": 1},
 		{"t": "2021-11-12", "quantity":  0.2, "PX_LAST":  50000.0000, "FX_RATE": 1},

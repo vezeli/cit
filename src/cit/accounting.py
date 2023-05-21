@@ -90,10 +90,8 @@ def calculate_statistics(
         fx_rate = df_[c._FX_RATE].tail(1).squeeze()
         if not ccy:
             avg_buying_price: R = acquisition_price
-            currency = c._ASSET_CURRENCY
         else:
             avg_buying_price: R = acquisition_price * fx_rate
-            currency = c._CURRENCY
 
     df = DataFrame(
         {
