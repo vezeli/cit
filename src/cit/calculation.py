@@ -88,7 +88,7 @@ def calculate_statistics(
     else:
         acquisition_price = df_[c._ACQUISITION_PRICE].tail(1).squeeze()
         fx_rate = df_[c._FX_RATE].tail(1).squeeze()
-        if not ccy:
+        if ccy:
             avg_buying_price: R = acquisition_price
         else:
             avg_buying_price: R = acquisition_price * fx_rate
@@ -229,7 +229,7 @@ def calculate_forex_transactions(df_asset: DataFrame, c: Config) -> DataFrame:
     """
     return DataFrame(
         {
-            f"{c._AMOUNT}": -1 * df_asset[c._AMOUNT] * df_asset[c._PRICE],
+            f"{c._AMOUNT}": df_asset[c._AMOUNT] * df_asset[c._PRICE],
             f"{c._PRICE}": df_asset[c._FX_RATE],
             f"{c._FX_RATE}": 1,
         },

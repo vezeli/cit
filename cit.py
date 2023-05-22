@@ -3,7 +3,7 @@ from numbers import Real as R
 
 from pandas import DataFrame
 
-from src.cit.accounting import (
+from src.cit.calculation import (
     calculate_forex_transactions,
     calculate_PNL_per_year,
     calculate_skatteverket,
@@ -38,17 +38,8 @@ def list_transactions(args):
         pass
     df.index = df.index.date
 
-    if args.mode == "all":
-        df = df
-        title = "BUY & SELL TRANSACTIONS"
-    elif args.mode == "buy":
-        df = df.query(f"{config._AMOUNT} > 0")
-        title = "BUY TRANSACTIONS"
-    elif args.mode == "sell":
-        df = df.query(f"{config._AMOUNT} < 0")
-        title = "SELL TRANSACTIONS"
-
     d = read_json_with_config(config)
+    asset = d[config._ASSET]
     asset_currency = d[config._ASSET_CURRENCY]
     domestic_currency = config._DOMESTIC_CURRENCY
     column_map = {
@@ -57,6 +48,16 @@ def list_transactions(args):
         config._FX_RATE: config._FX_RATE.capitalize(),
         "DomesticMV": f"{config._PRICE.capitalize()} ({domestic_currency})",
     }
+
+    if args.mode == "all":
+        df = df
+        title = f"{asset.upper()} TRANSACTIONS"
+    elif args.mode == "buy":
+        df = df.query(f"{config._AMOUNT} > 0")
+        title = f"{asset.upper()} BUY TRANSACTIONS"
+    elif args.mode == "sell":
+        df = df.query(f"{config._AMOUNT} < 0")
+        title = f"{asset.upper()} SELL TRANSACTIONS"
 
     print(
         format_DF(
@@ -79,14 +80,31 @@ def forex_transactions(args):
         filename = args.out
         export_json(filename, df, config)
 
-    print(df)
-    
+    d = read_json_with_config(config)
+    asset_currency = d[config._ASSET_CURRENCY]
+    domestic_currency = config._DOMESTIC_CURRENCY
+    title = f"{asset_currency} TRANSACTIONS"
+    column_map = {
+        config._AMOUNT: config._AMOUNT.capitalize(),
+        config._PRICE: f"{config._PRICE.capitalize()} ({domestic_currency})",
+        config._FX_RATE: f"{config._FX_RATE.capitalize()} ({domestic_currency}{domestic_currency})",
+    }
+
+    df.index = df.index.date
+    print(
+        format_DF(
+            df=df,
+            title=title,
+            m=column_map,
+            index=True,
+        )
+    )
 
 
 def calculate(args):
     global config
 
-    config._DEDUCTIBLE = args.deductible
+    config._DEDUCTIBLE = args.td
 
     df = read_input_files(args.FILES, config)
 
@@ -105,7 +123,7 @@ def calculate(args):
         currency = asset_currency
         fx_ticker = f"{asset_currency}{asset_currency}"
 
-    if args.mode == "position-summary":
+    if args.mode == "summary":
         df: DataFrame = calculate_statistics(
             financial_year=year,
             df=df,
@@ -128,7 +146,7 @@ def calculate(args):
         column_map = {
             config._AMOUNT: config._AMOUNT.capitalize(),
             config._PRICE: f"{config._PRICE.capitalize()} ({asset_currency})",
-            config._FX_RATE: f"{fx_ticker}",
+            config._FX_RATE: f"{config._FX_RATE.capitalize()} ({fx_ticker})",
             config._ACQUISITION_PRICE: f"{config._ACQUISITION_PRICE.capitalize()} ({asset_currency})",
             "P&L": f"P&L ({currency})",
         }
@@ -166,8 +184,7 @@ if __name__ == "__main__":
 
     list_parser = subparsers.add_parser(
         "transactions",
-        aliases=["ls"],
-        help="list transactions",
+        help="show transactions",
     )
     list_parser.add_argument(
         "mode",
@@ -175,92 +192,80 @@ if __name__ == "__main__":
         const="all",
         default="all",
         choices=["all", "buy", "sell"],
-        help="choose transaction type",
+        help="Which transactions do you want to show?",
     )
     list_parser.add_argument(
-        "-i",
         "--in",
         nargs="*",
         default=[config._INPUT_FILE],
         type=str,
-        help=f"select input files from {config._DATA_PATH} dir",
+        help=f"specify the input files for reading (relative to {config._DATA_PATH} directory)",
         dest="FILES",
     )
     list_parser.add_argument(
-        "-y",
         "--year",
         default=None,
         type=int,
-        help="filter transactions by year",
+        help="show transaction from the specified year",
     )
     list_parser.add_argument(
-        "-d",
         "--domestic-ccy",
         action="store_true",
-        help="convert to domestic currency",
+        help="add a column with market prices in the domestic currency",
         dest="ccy",
     )
     list_parser.set_defaults(func=list_transactions)
 
     forex_parser = subparsers.add_parser(
         "forex-transactions",
-        help="construct forex transactions",
+        help="construct FX transactions to/from asset-denominated currency",
     )
     forex_parser.add_argument(
-        "-i",
         "--in",
         nargs="*",
         default=[config._INPUT_FILE],
         type=str,
-        help=f"select input files from {config._DATA_PATH} dir",
+        help=f"specify the input files for reading (relative to {config._DATA_PATH} directory)",
         dest="FILES",
     )
     forex_parser.add_argument(
-        "-o",
         "--out",
-        nargs="?",
-        default=config._OUTPUT_FILE,
         type=str,
-        help=f"write data to a JSON file (default: {config._OUTPUT_FILE})",
+        help=f"write the transactions data to the specified file",
     )
     forex_parser.set_defaults(func=forex_transactions)
 
     calculate_parser = subparsers.add_parser(
         "calculate",
-        aliases=["get"],
-        help="process transaction data",
+        help="portfolio calculations",
     )
     calculate_parser.add_argument(
         "mode",
-        choices=["position-summary", "profit-and-loss", "tax-liability"],
+        choices=["summary", "profit-and-loss", "tax-liability"],
         help="choose report type",
     )
     calculate_parser.add_argument(
-        "-i",
         "--in",
         nargs="*",
         default=[config._INPUT_FILE],
         type=str,
-        help=f"select a file from {config._DATA_PATH} dir",
+        help=f"specify the input files for reading (relative to {config._DATA_PATH} directory)",
         dest="FILES",
     )
     calculate_parser.add_argument(
-        "-y",
         "--year",
         default=None,
         type=int,
-        help="select a year from input file",
+        help="show the results for the specified year",
     )
     calculate_parser.add_argument(
-        "-t",
         "--tax-deductible",
         default=config._DEDUCTIBLE,
         type=float,
-        help=f"set tax-deductible percentage (default: {config._DEDUCTIBLE})",
-        dest="deductible",
+        help=f"set the tax-deductible percentage for the calculation (default: {config._DEDUCTIBLE})",
+        dest="td",
     )
     calculate_parser.add_argument(
-        "-d",
         "--domestic-ccy",
         action="store_false",
         help="convert to domestic currency",
@@ -271,10 +276,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.subcommand:
-        print()
-
         args.func(args)
     else:
         parser.print_help()
-
-    print()
