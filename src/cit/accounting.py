@@ -213,3 +213,25 @@ def calculate_skatteverket(
         }
     )
     return df_rv
+
+
+def calculate_forex_transactions(df_asset: DataFrame, c: Config) -> DataFrame:
+    """Returns the SEK transaction history based on the foreign-asset transaction history.
+
+    The resulting `DataFrame` represents the SEK transaction history and has the same
+    form as `DataFrame` for the foreign-asset transaction history.
+
+    Skatteverket (Eng., Swedish Tax Agency) considers buying foreign-denominated assets
+    (e.g., BTC-USD) as selling SEK and buying foreign-denominated assets as selling SEK.
+    Therefore, SEK transactions have the opposite sign compared to foreign-denominated
+    asset transactions. The market price for SEK is equal to the exchange rate, and the
+    foreign-exchange rate from SEK to SEK is always 1.
+    """
+    return DataFrame(
+        {
+            f"{c._AMOUNT}": -1 * df_asset[c._AMOUNT] * df_asset[c._PRICE],
+            f"{c._PRICE}": df_asset[c._FX_RATE],
+            f"{c._FX_RATE}": 1,
+        },
+        index=df_asset.index,
+    )

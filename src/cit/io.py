@@ -135,3 +135,32 @@ def read_input_files(input_files: list, c: Config) -> DataFrame:
 
     df = concat(dfs).sort_index()
     return df
+
+
+def _transactions_as_records(df: DataFrame, c: Config) -> list[dict]:
+    return (
+        df.reset_index()
+        .loc[:, [c._DATE, c._AMOUNT, c._PRICE, c._FX_RATE]]
+        .astype({"date": str})
+        .to_dict(orient="records")
+    )
+
+
+def _format_transactions_file(df: DataFrame, c: Config) -> DataFrame:
+    return {
+        "_comment": "Auto-generated JSON for FX transactions",
+        f"{c._ASSET}": "N/A",
+        f"{c._ASSET_CURRENCY}": f"{c._DOMESTIC_CURRENCY}",
+        f"{c._TRANSACTIONS}": _transactions_as_records(df, c),
+    }
+
+
+def export_json(filename: str, df: DataFrame, c: Config) -> None:
+    json_content = _format_transactions_file(df, c)
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(
+            json_content,
+            f,
+            ensure_ascii=False,
+            indent=4,
+        )

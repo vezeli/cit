@@ -4,13 +4,14 @@ from numbers import Real as R
 from pandas import DataFrame
 
 from src.cit.accounting import (
+    calculate_forex_transactions,
     calculate_PNL_per_year,
     calculate_skatteverket,
     calculate_statistics,
 )
 from src.cit.config import Config
 from src.cit.formatting import format_DF
-from src.cit.io import read_json_with_config, read_in_transactions, read_input_files
+from src.cit.io import export_json, read_json_with_config, read_input_files
 
 _PROGRAM_NAME = "cit"
 
@@ -67,44 +68,22 @@ def list_transactions(args):
     )
 
 
-def summary(args):
+def forex_transactions(args):
     global config
 
     df = read_input_files(args.FILES, config)
 
-    if args.year:
-        year = args.year
-    else:
-        year = df.index[-1].year
+    df = calculate_forex_transactions(df, config)
 
-    df: DataFrame = calculate_statistics(
-        financial_year=year,
-        df=df,
-        c=config,
-        ccy=args.ccy,
-    )
+    if args.out:
+        filename = args.out
+        export_json(filename, df, config)
 
-    d = read_json_with_config(config)
-    if not args.ccy:
-        currency = d[config._ASSET_CURRENCY]
-    else:
-        currency = config._DOMESTIC_CURRENCY
-
-    column_map = {
-        "Average buying price": f"Average buying price ({currency})",
-    }
-
-    print(
-        format_DF(
-            df,
-            title=f"TRADE SUMMARY FOR {year}",
-            m=column_map,
-            index=False,
-        )
-    )
+    print(df)
+    
 
 
-def report(args):
+def calculate(args):
     global config
 
     config._DEDUCTIBLE = args.deductible
@@ -126,14 +105,26 @@ def report(args):
         currency = asset_currency
         fx_ticker = f"{asset_currency}{asset_currency}"
 
-    if args.mode == "pnl":
-        df = calculate_PNL_per_year(
+    if args.mode == "position-summary":
+        df: DataFrame = calculate_statistics(
             financial_year=year,
             df=df,
             c=config,
             ccy=args.ccy,
         )
-        title = f"P&L IN {year}"
+        title = f"POSITION SUMMARY FOR {year}"
+        column_map = {
+            "Average buying price": f"Average buying price ({currency})",
+        }
+        index = False
+    elif args.mode == "profit-and-loss":
+        df: DataFrame = calculate_PNL_per_year(
+            financial_year=year,
+            df=df,
+            c=config,
+            ccy=args.ccy,
+        )
+        title = f"PROFIT AND LOSS IN {year}"
         column_map = {
             config._AMOUNT: config._AMOUNT.capitalize(),
             config._PRICE: f"{config._PRICE.capitalize()} ({asset_currency})",
@@ -142,8 +133,8 @@ def report(args):
             "P&L": f"P&L ({currency})",
         }
         index = True
-    elif args.mode == "taxes":
-        df = calculate_skatteverket(
+    elif args.mode == "tax-liability":
+        df: DataFrame = calculate_skatteverket(
             financial_year=year,
             df=df,
             c=config,
@@ -192,7 +183,7 @@ if __name__ == "__main__":
         nargs="*",
         default=[config._INPUT_FILE],
         type=str,
-        help=f"select input file from {config._DATA_PATH} dir",
+        help=f"select input files from {config._DATA_PATH} dir",
         dest="FILES",
     )
     list_parser.add_argument(
@@ -203,53 +194,48 @@ if __name__ == "__main__":
         help="filter transactions by year",
     )
     list_parser.add_argument(
-        "-c",
-        "--ccy",
+        "-d",
+        "--domestic-ccy",
         action="store_true",
-        help="show price in domestic currency",
+        help="convert to domestic currency",
+        dest="ccy",
     )
     list_parser.set_defaults(func=list_transactions)
 
-    summary_parser = subparsers.add_parser(
-        "summary",
-        aliases=["agg"],
-        help="aggregate transactions into a remaining position",
+    forex_parser = subparsers.add_parser(
+        "forex-transactions",
+        help="construct forex transactions",
     )
-    summary_parser.add_argument(
+    forex_parser.add_argument(
         "-i",
         "--in",
         nargs="*",
         default=[config._INPUT_FILE],
         type=str,
-        help=f"select input file from {config._DATA_PATH} dir",
+        help=f"select input files from {config._DATA_PATH} dir",
         dest="FILES",
     )
-    summary_parser.add_argument(
-        "-y",
-        "--year",
-        default=None,
-        type=int,
-        help="make summary for the end of the provided year",
+    forex_parser.add_argument(
+        "-o",
+        "--out",
+        nargs="?",
+        default=config._OUTPUT_FILE,
+        type=str,
+        help=f"write data to a JSON file (default: {config._OUTPUT_FILE})",
     )
-    summary_parser.add_argument(
-        "-c",
-        "--ccy",
-        action="store_true",
-        help="show price in domestic currency",
-    )
-    summary_parser.set_defaults(func=summary)
+    forex_parser.set_defaults(func=forex_transactions)
 
-    report_parser = subparsers.add_parser(
-        "report",
+    calculate_parser = subparsers.add_parser(
+        "calculate",
         aliases=["get"],
-        help="generate tax-related report",
+        help="process transaction data",
     )
-    report_parser.add_argument(
+    calculate_parser.add_argument(
         "mode",
-        choices=["pnl", "taxes"],
+        choices=["position-summary", "profit-and-loss", "tax-liability"],
         help="choose report type",
     )
-    report_parser.add_argument(
+    calculate_parser.add_argument(
         "-i",
         "--in",
         nargs="*",
@@ -258,27 +244,29 @@ if __name__ == "__main__":
         help=f"select a file from {config._DATA_PATH} dir",
         dest="FILES",
     )
-    report_parser.add_argument(
+    calculate_parser.add_argument(
         "-y",
         "--year",
         default=None,
         type=int,
         help="select a year from input file",
     )
-    report_parser.add_argument(
-        "-d",
+    calculate_parser.add_argument(
+        "-t",
+        "--tax-deductible",
         default=config._DEDUCTIBLE,
         type=float,
         help=f"set tax-deductible percentage (default: {config._DEDUCTIBLE})",
         dest="deductible",
     )
-    report_parser.add_argument(
-        "-c",
-        "--ccy",
+    calculate_parser.add_argument(
+        "-d",
+        "--domestic-ccy",
         action="store_false",
-        help="show results in asset-priced currency",
+        help="convert to domestic currency",
+        dest="ccy",
     )
-    report_parser.set_defaults(func=report)
+    calculate_parser.set_defaults(func=calculate)
 
     args = parser.parse_args()
 
