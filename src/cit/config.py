@@ -6,6 +6,7 @@ from dataclasses import dataclass
 class Config:
     _DATA_PATH: str = "./input_data"
     _INPUT_FILE: str = "skatteverket-example-1.json"
+    _OUTPUT_FILE: str = "out.json"
     _BASIC: str = "BACIS"
     _COMPLETE: str = "COMPLETE"
     _ASSET: str = "Asset"
