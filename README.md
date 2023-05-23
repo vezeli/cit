@@ -34,30 +34,16 @@ Script `cit.py` starts the CLI
 
 which provides three subcommands with their positional and optional arguments:
 
-* ``$ python cit.py transactions --help`` - show transactions
+* ``$ python cit.py transactions --help`` - show asset transactions
 
-* ``$ python cit.py forex-transactions --help`` - construct FX transactions to/from asset-denominated currency
+* ``$ python cit.py forex-transactions --help`` - construct asset-denominated FX transactions
 
-* ``$ python cit.py calculate --help`` - portfolio calculations
+* ``$ python cit.py calculate --help`` - preform portfolio calculations
 
-The program, by default, reads JSON files from the `./input_data` directory
-that contain transaction data. If no CLI argument is provided to specify the
-input file name, the program will read from
-`./input_data/skatteverket-example-1.json`. An optional argument `--in` is
-available for the user to specify the input file/files name within the
-`./input_data` directory.
-
-### Modes
-
-CIT operates in two modes:
-
-1. When the user provides market prices and exchange rates in a JSON file, CIT
-   processes the transaction data with the provided information.
-
-2. If the market prices are not included in the JSON file, CIT automatically
-   retrieves the prices from Yahoo Finance. It then proceeds to process the
-   transaction data using the fetched market prices, just as it would if the
-   prices were provided in the JSON file.
+The program, by default, reads JSON files relative to the `./input_data`
+directory. If no CLI argument is provided to specify the input file name, the
+program will read from `./input_data/skatteverket-example-1.json`. Optional
+argument `--in` is available for specifying the names of the input files.
 
 ### Input Files
 
@@ -71,12 +57,12 @@ information needs to be provided in the JSON file:
 - `AssetPriceCurrency`: A string with the currency symbol used for pricing the
   Asset (e.g., USD).
 
-- `Transactions`: A nested container that stores a list of dictionaries with
-  details about the transactions.
+- `Transactions`: A nested container that stores a list of records
+  (dictionaries) with details about the transactions.
 
-Each dictionary within `Transactions` should include the following information:
+Each record within `Transactions` should include the following information:
 
-- `date`: A string indicating the transaction date.
+- `date`: A string indicating the transaction date formatted as `YYYY-MM-DD`.
 
 - `amount`: A numeric value representing the quantity of crypto units that were
   bought, sold, or spent. Positive values indicate buying, and negative values
@@ -86,14 +72,25 @@ Each dictionary within `Transactions` should include the following information:
   unit* in `AssetPriceCurrency` at the time of the transaction.
 
 - `exchange rate`: A positive numeric value representing the exchange rate
-  between `AssetPriceCurrency` and domestic currency (specified in the
-  `config.py`) at the time of the transaction. `AssetPriceCurrency` is
-  considered the base currency, and domestic currency is the price currency.
+  between `AssetPriceCurrency` and domestic currency (`_DOMESTIC_CURRENCY`
+  specified in the `config.py`) at the time of the transaction.
+  `AssetPriceCurrency` is considered the base currency, and the domestic
+  currency is the price currency.
 
-When the `market price` and `exchange rate` keys are omitted in the
-`Transactions` dictionary, CIT operates in the download mode. In this mode, it
-fetches the so-called mid prices from Yahoo Finance, which are calculated as
-the average of the opening and closing prices for that day.
+### Modes
+
+CIT operates in two modes:
+
+1. When the user provides `market price` and `exchange rate` data in the JSON
+   input file, CIT processes the transaction data with the provided
+   information.
+
+2. If `market price` and `exchange rate` keys are omitted in the nested
+   `Transactions` container, CIT automatically retrieves the market data from
+   Yahoo Finance. In this mode, it fetches the so-called mid prices, which are
+   calculated as the average of the opening and closing prices for a given day.
+   It then processes the transaction data, with the fetched market prices, just
+   as it would if the prices were provided in the JSON file.
 
 ## Skatteverket's Examples
 
@@ -123,11 +120,11 @@ However, the same approach can be applied to process other input files as well.
 
 ``$ python cit.py transactions all --in skatteverket-example-1.json``
 
-* For listing only the buy transactions made in 2021:
+* For listing only the buy transactions made during 2021:
 
 ``$ python cit.py transactions buy --in skatteverket-example-1.json --year 2021``
 
-* To summarize and calculate trade statistics for the year 2022, use the
+* To summarize and calculate position statistics for the year 2022, use the
   `calculate` subcommand:
 
 ``$ python cit.py calculate summary --in skatteverket-example-1.json --year 2022``
@@ -138,21 +135,21 @@ However, the same approach can be applied to process other input files as well.
 
 ``$ python cit.py calculate profit-and-loss --in skatteverket-example-1.json --year 2022``
 
-* For calculating the tax liability from the P&L, use the `calculate`
-  subcommand with the `tax-liability` positional argument in domestic currency:
+* For calculating the tax liability in domestic currency from the P&L, use the
+  `calculate` subcommand with the `tax-liability` positional argument:
 
 ``$ python cit.py calculate tax-liability --in skatteverket-example-1.json --year 2022 --domestic-ccy``
-
-* Skatteverket considers buying and selling of asset-denominated currency
-  (e.g., USD) as separate trades. To construct a list of FX transaction from
-  the input data, use the `forex-transactions`:
-
-``$ python cit.py forex-transactions --in skatteverket-example-1.json``
 
 Typically, you can use the `--domestic-ccy` optional flag to control the
 currency in which CIT provides results (asset-denominated or domestic).
 However, in the current examples, this flag is not relevant because the market
 prices are denominated in the domestic currency.
+
+* Skatteverket considers buying and selling of asset-denominated currency
+  (e.g., USD) as separate forex trades. To construct a list of FX transaction
+  from the input data, use the `forex-transactions` subcommand:
+
+``$ python cit.py forex-transactions --in skatteverket-example-1.json``
 
 It is recommend to go through examples step by step and compare CIT's outputs
 with the calculations from Skatteverket. This will greatly improve your
